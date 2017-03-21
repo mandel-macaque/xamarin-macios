@@ -55,7 +55,7 @@ namespace Foundation {
 #endif
 	public partial class NSUrlSessionHandler : HttpMessageHandler
 	{
-		static readonly NSUrlSessionConfiguration configuration;
+		static readonly object configurationLock = new Object ();
 		readonly Dictionary<string, string> headerSeparators = new Dictionary<string, string> {
 			["User-Agent"] = " ",
 			["Server"] = " "
@@ -65,26 +65,23 @@ namespace Foundation {
 		readonly Dictionary<NSUrlSessionTask, InflightData> inflightRequests;
 		readonly object inflightRequestsLock = new object ();
 
-		static NSUrlSessionHandler ()
-		{
-			configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration;
-
-			// we cannot do a bitmask but we can set the minimum based on ServicePointManager.SecurityProtocol minimum
-			var sp = ServicePointManager.SecurityProtocol;
-			if ((sp & SecurityProtocolType.Ssl3) != 0)
-				configuration.TLSMinimumSupportedProtocol = SslProtocol.Ssl_3_0;
-			else if ((sp & SecurityProtocolType.Tls) != 0)
-				configuration.TLSMinimumSupportedProtocol = SslProtocol.Tls_1_0;
-			else if ((sp & SecurityProtocolType.Tls11) != 0)
-				configuration.TLSMinimumSupportedProtocol = SslProtocol.Tls_1_1;
-			else if ((sp & SecurityProtocolType.Tls12) != 0)
-				configuration.TLSMinimumSupportedProtocol = SslProtocol.Tls_1_2;
-		}
-
 		public NSUrlSessionHandler ()
 		{
 			AllowAutoRedirect = true;
 
+			var configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration;
+			lock (configurationLock) {
+				// we cannot do a bitmask but we can set the minimum based on ServicePointManager.SecurityProtocol minimum
+				var sp = ServicePointManager.SecurityProtocol;
+				if ((sp & SecurityProtocolType.Ssl3) != 0)
+					configuration.TLSMinimumSupportedProtocol = SslProtocol.Ssl_3_0;
+				else if ((sp & SecurityProtocolType.Tls) != 0)
+					configuration.TLSMinimumSupportedProtocol = SslProtocol.Tls_1_0;
+				else if ((sp & SecurityProtocolType.Tls11) != 0)
+					configuration.TLSMinimumSupportedProtocol = SslProtocol.Tls_1_1;
+				else if ((sp & SecurityProtocolType.Tls12) != 0)
+					configuration.TLSMinimumSupportedProtocol = SslProtocol.Tls_1_2;
+			}
 			session = NSUrlSession.FromConfiguration (configuration, new NSUrlSessionHandlerDelegate (this), null);
 			inflightRequests = new Dictionary<NSUrlSessionTask, InflightData> ();
 		}
