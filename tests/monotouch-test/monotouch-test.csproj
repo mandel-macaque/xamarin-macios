@@ -650,6 +650,7 @@
     <Compile Include="mono\ConfigTest.cs" />
     <Compile Include="OpenGLES\EAGLContext.cs" />
     <Compile Include="CoreText\CTParagraphStyleTests.cs" />
+    <Compile Include="HttpClient\HttpClientTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
@@ -715,6 +716,7 @@
     <Folder Include="Intents\" />
     <Folder Include="System.Net.Http\" />
     <Folder Include="OpenGLES\" />
+    <Folder Include="HttpClient\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="AudioToolbox\1.caf" />
@@ -753,7 +755,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Security\openssl_crt.der">
-        <LogicalName>monotouchtest.Security.openssl_crt.der</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
