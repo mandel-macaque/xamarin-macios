@@ -104,9 +104,8 @@ namespace xharness
 					capturedLog.WriteLine (v.Exception);
 					capturedLog.Description = $"{name} Listing {v.Exception.Message})";
 				} else if (v.IsCompleted) {
-					var devices = loadable as Devices;
-					var devicesTypes = new StringBuilder ();
-					if (devices != null) {
+					if (loadable is Devices devices) {
+						var devicesTypes = new StringBuilder ();
 						if (devices.Connected32BitIOS.Any ()) {
 							devicesTypes.Append ("iOS 32 bit");
 						}
@@ -119,8 +118,12 @@ namespace xharness
 						if (devices.ConnectedWatch.Any ()) {
 							devicesTypes.Append (devicesTypes.Length == 0 ? "watchOS" : ", watchOS");
 						}
+						capturedLog.Description = (devicesTypes.Length == 0) ? $"{name} Listing (ok - no devices found)." : $"{name} Listing (ok). Devices types are: {devicesTypes.ToString ()}";
 					}
-					capturedLog.Description = (devices == null || devicesTypes.Length == 0)? $"{name} Listing (ok)." : $"{name} Listing (ok). Devices types are: {devicesTypes.ToString ()}";
+					if (loadable is Simulators simulators) {
+						var simCount = simulators.AvailableDevices.Count ();
+						capturedLog.Description = ( simCount == 0) ? $"{name} Listing (ok - no simulators found)." : $"{name} Listing (ok - Found {simCount} simulators).";
+					}
 				}
 			});
 		}
@@ -230,6 +233,7 @@ namespace xharness
 			public string Variation;
 			public string MTouchExtraArgs;
 			public string MonoBundlingExtraArgs; // mmp
+			public string KnownFailure;
 			public bool Debug;
 			public bool Profiling;
 			public string LinkMode;
@@ -270,53 +274,44 @@ namespace xharness
 			case "iPhone":
 				/* we don't add --assembly-build-target=@all=staticobject because that's the default in all our test projects */
 				if (supports_debug) {
-					yield return new TestData { Variation = "AssemblyBuildTarget: dylib (debug)", MTouchExtraArgs = "--assembly-build-target=@all=dynamiclibrary", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Dynamic, MonoNativeFlavor = flavor };
-					yield return new TestData { Variation = "AssemblyBuildTarget: SDK framework (debug)", MTouchExtraArgs = "--assembly-build-target=@sdk=framework=Xamarin.Sdk --assembly-build-target=@all=staticobject", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, MonoNativeFlavor = flavor };
-					yield return new TestData { Variation = "AssemblyBuildTarget: dylib (debug, profiling)", MTouchExtraArgs = "--assembly-build-target=@all=dynamiclibrary", Debug = true, Profiling = true, MonoNativeLinkMode = MonoNativeLinkMode.Dynamic, MonoNativeFlavor = flavor };
-					yield return new TestData { Variation = "AssemblyBuildTarget: SDK framework (debug, profiling)", MTouchExtraArgs = "--assembly-build-target=@sdk=framework=Xamarin.Sdk --assembly-build-target=@all=staticobject", Debug = true, Profiling = true, MonoNativeLinkMode = MonoNativeLinkMode.Static, MonoNativeFlavor = flavor };
+					yield return new TestData { Variation = "AssemblyBuildTarget: dylib (debug)", MTouchExtraArgs = $"--assembly-build-target=@all=dynamiclibrary {test.TestProject.MTouchExtraArgs}", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Dynamic, MonoNativeFlavor = flavor };
+					yield return new TestData { Variation = "AssemblyBuildTarget: SDK framework (debug)", MTouchExtraArgs = $"--assembly-build-target=@sdk=framework=Xamarin.Sdk --assembly-build-target=@all=staticobject {test.TestProject.MTouchExtraArgs}", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, MonoNativeFlavor = flavor };
+					yield return new TestData { Variation = "AssemblyBuildTarget: dylib (debug, profiling)", MTouchExtraArgs = $"--assembly-build-target=@all=dynamiclibrary {test.TestProject.MTouchExtraArgs}", Debug = true, Profiling = true, MonoNativeLinkMode = MonoNativeLinkMode.Dynamic, MonoNativeFlavor = flavor };
+					yield return new TestData { Variation = "AssemblyBuildTarget: SDK framework (debug, profiling)", MTouchExtraArgs = $"--assembly-build-target=@sdk=framework=Xamarin.Sdk --assembly-build-target=@all=staticobject {test.TestProject.MTouchExtraArgs}", Debug = true, Profiling = true, MonoNativeLinkMode = MonoNativeLinkMode.Static, MonoNativeFlavor = flavor };
 				}
 
 				if (test.ProjectConfiguration.Contains ("Debug"))
-					yield return new TestData { Variation = "Release", MTouchExtraArgs = "", Debug = false, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static };
+					yield return new TestData { Variation = "Release", MTouchExtraArgs = test.TestProject.MTouchExtraArgs, Debug = false, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static };
 				if (test.Platform == TestPlatform.iOS_Unified32)
-					yield return new TestData { Variation = "Release: UseThumb", MTouchExtraArgs = "", Debug = false, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, UseThumb = true };
-				yield return new TestData { Variation = "AssemblyBuildTarget: SDK framework (release)", MTouchExtraArgs = "--assembly-build-target=@sdk=framework=Xamarin.Sdk --assembly-build-target=@all=staticobject", Debug = false, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, MonoNativeFlavor = flavor };
+					yield return new TestData { Variation = "Release: UseThumb", MTouchExtraArgs = test.TestProject.MTouchExtraArgs, Debug = false, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, UseThumb = true };
+				yield return new TestData { Variation = "AssemblyBuildTarget: SDK framework (release)", MTouchExtraArgs = $"--assembly-build-target=@sdk=framework=Xamarin.Sdk --assembly-build-target=@all=staticobject {test.TestProject.MTouchExtraArgs}", Debug = false, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, MonoNativeFlavor = flavor };
 
 				switch (test.TestName) {
 				case "monotouch-test":
+					if (supports_dynamic_registrar_on_device)
+						yield return new TestData { Variation = "Debug (dynamic registrar)", MTouchExtraArgs = "--registrar:dynamic", Debug = true, Profiling = false };
 					yield return new TestData { Variation = "Release (all optimizations)", MTouchExtraArgs = "--registrar:static --optimize:all", Debug = false, Profiling = false, Defines = "OPTIMIZEALL" };
 					if (supports_debug) {
 						yield return new TestData { Variation = "Debug (all optimizations)", MTouchExtraArgs = "--registrar:static --optimize:all", Debug = true, Profiling = false, Defines = "OPTIMIZEALL" };
 						yield return new TestData { Variation = "Debug: SGenConc", MTouchExtraArgs = "", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, EnableSGenConc = true};
 					}
 					if (supports_interpreter) {
-						// interpreter is broken for monotouch-test: https://github.com/xamarin/maccore/issues/1613, so ignore for now
-						var ignore_interpreter_because_of_1613 = true;
 						if (supports_debug) {
-							yield return new TestData { Variation = "Debug (interpreter)", MTouchExtraArgs = "--interpreter", Debug = true, Profiling = false, Ignored = ignore_interpreter_because_of_1613, };
-							yield return new TestData { Variation = "Debug (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = true, Profiling = false, Ignored = ignore_interpreter_because_of_1613, };
+							yield return new TestData { Variation = "Debug (interpreter)", MTouchExtraArgs = "--interpreter", Debug = true, Profiling = false };
+							yield return new TestData { Variation = "Debug (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = true, Profiling = false };
 						}
-						yield return new TestData { Variation = "Release (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = false, Profiling = false, Ignored = ignore_interpreter_because_of_1613, };
+						yield return new TestData { Variation = "Release (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = false, Profiling = false };
 					}
 					break;
 				case "mscorlib":
-					yield return new TestData { Variation = "Debug: SGenConc", MTouchExtraArgs = "", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, EnableSGenConc = true};
+					if (supports_debug)
+						yield return new TestData { Variation = "Debug: SGenConc", MTouchExtraArgs = "", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, EnableSGenConc = true};
 					if (supports_interpreter) {
 						if (supports_debug) {
-							yield return new TestData { Variation = "Debug (interpreter)", MTouchExtraArgs = "--interpreter", Debug = true, Profiling = false, Undefines = "FULL_AOT_RUNTIME" };
-							yield return new TestData { Variation = "Debug (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = true, Profiling = false, Undefines = "FULL_AOT_RUNTIME" };
+							yield return new TestData { Variation = "Debug (interpreter)", MTouchExtraArgs = "--interpreter", Debug = true, Profiling = false, Undefines = "FULL_AOT_RUNTIME", KnownFailure = "<a href='https://github.com/xamarin/maccore/issues/1683'>#1683</a>" };
+							yield return new TestData { Variation = "Debug (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = true, Profiling = false, Undefines = "FULL_AOT_RUNTIME", KnownFailure = "<a href='https://github.com/xamarin/maccore/issues/1682'>#1682</a>" };
 						}
-						yield return new TestData { Variation = "Release (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = false, Profiling = false, Undefines = "FULL_AOT_RUNTIME" };
-					}
-					break;
-				case "mini":
-					yield return new TestData { Variation = "Debug: SGenConc", MTouchExtraArgs = "", Debug = true, Profiling = false, MonoNativeLinkMode = MonoNativeLinkMode.Static, EnableSGenConc = true};
-					if (supports_interpreter) {
-						if (supports_debug) {
-							yield return new TestData { Variation = "Debug (interpreter)", MTouchExtraArgs = "--interpreter", Debug = true, Profiling = false, Undefines = "FULL_AOT_RUNTIME" };
-							yield return new TestData { Variation = "Debug (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = true, Profiling = false, Undefines = "FULL_AOT_RUNTIME" };
-						}
-						yield return new TestData { Variation = "Release (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = false, Profiling = false, Undefines = "FULL_AOT_RUNTIME" };
+						yield return new TestData { Variation = "Release (interpreter -mscorlib)", MTouchExtraArgs = "--interpreter=-mscorlib", Debug = false, Profiling = false, Undefines = "FULL_AOT_RUNTIME", KnownFailure = "<a href='https://github.com/xamarin/maccore/issues/1682'>#1682</a>" };
 					}
 					break;
 				}
@@ -325,6 +320,7 @@ namespace xharness
 				switch (test.TestName) {
 				case "monotouch-test":
 					// The default is to run monotouch-test with the dynamic registrar (in the simulator), so that's already covered
+					yield return new TestData { Variation = "Debug (LinkSdk)", Debug = true, Profiling = false, LinkMode = "LinkSdk" };
 					yield return new TestData { Variation = "Debug (static registrar)", MTouchExtraArgs = "--registrar:static", Debug = true, Profiling = false, Undefines = "DYNAMIC_REGISTRAR" };
 					yield return new TestData { Variation = "Release (all optimizations)", MTouchExtraArgs = "--registrar:static --optimize:all", Debug = false, Profiling = false, LinkMode = "Full", Defines = "OPTIMIZEALL", Undefines = "DYNAMIC_REGISTRAR" };
 					yield return new TestData { Variation = "Debug (all optimizations)", MTouchExtraArgs = "--registrar:static --optimize:all,-remove-uithread-checks", Debug = true, Profiling = false, LinkMode = "Full", Defines = "OPTIMIZEALL", Undefines = "DYNAMIC_REGISTRAR", Ignored = !IncludeAll };
@@ -380,7 +376,11 @@ namespace xharness
 					var defines = test_data.Defines;
 					var undefines = test_data.Undefines;
 					var ignored = test_data.Ignored;
+					var known_failure = test_data.KnownFailure;
 					var candidates = test_data.Candidates;
+
+					if (!string.IsNullOrEmpty (known_failure))
+						ignored = true;
 
 					var clone = task.TestProject.Clone ();
 					var clone_task = Task.Run (async () => {
@@ -462,6 +462,8 @@ namespace xharness
 					newVariation.Variation = variation;
 					newVariation.Ignored = ignored ?? task.Ignored;
 					newVariation.BuildOnly = task.BuildOnly;
+					newVariation.TimeoutMultiplier = task.TimeoutMultiplier;
+					newVariation.KnownFailure = known_failure;
 					rv.Add (newVariation);
 				}
 			}
@@ -508,9 +510,10 @@ namespace xharness
 						derived.CloneTestProject (pair.Item1);
 						var simTasks = CreateRunSimulatorTaskAsync (derived);
 						runSimulatorTasks.AddRange (simTasks);
-						if (configurations.Length > 1) {
-							foreach (var task in simTasks)
+						foreach (var task in simTasks) {
+							if (configurations.Length > 1)
 								task.Variation = config;
+							task.TimeoutMultiplier = project.TimeoutMultiplier;
 						}
 					}
 				}
@@ -518,8 +521,10 @@ namespace xharness
 
 			var testVariations = CreateTestVariations (runSimulatorTasks, (buildTask, test, candidates) => new RunSimulatorTask (buildTask, candidates?.Cast<SimDevice> () ?? test.Candidates)).ToList ();
 
-			foreach (var tv in testVariations)
-				await tv.FindSimulatorAsync ();
+			foreach (var tv in testVariations) {
+				if (!tv.Ignored)
+					await tv.FindSimulatorAsync ();
+			}
 
 			var rv = new List<AggregatedRunSimulatorTask> ();
 			foreach (var taskGroup in testVariations.GroupBy ((RunSimulatorTask task) => task.Device?.UDID ?? task.Candidates.ToString ())) {
@@ -534,6 +539,7 @@ namespace xharness
 		IEnumerable<TestTask> CreateRunDeviceTasks ()
 		{
 			var rv = new List<RunDeviceTask> ();
+			var projectTasks = new List<RunDeviceTask> ();
 
 			foreach (var project in Harness.IOSTestProjects) {
 				if (!project.IsExecutableProject)
@@ -543,6 +549,7 @@ namespace xharness
 				if (!IsIncluded (project))
 					ignored = true;
 
+				projectTasks.Clear ();
 				if (!project.SkipiOSVariation) {
 					var build64 = new XBuildTask {
 						Jenkins = this,
@@ -552,7 +559,7 @@ namespace xharness
 						TestName = project.Name,
 					};
 					build64.CloneTestProject (project);
-					rv.Add (new RunDeviceTask (build64, Devices.Connected64BitIOS.Where (d => d.IsSupported (project))) { Ignored = ignored || !IncludeiOS, BuildOnly = project.BuildOnly });
+					projectTasks.Add (new RunDeviceTask (build64, Devices.Connected64BitIOS.Where (d => d.IsSupported (project))) { Ignored = !IncludeiOS });
 
 					var build32 = new XBuildTask {
 						Jenkins = this,
@@ -562,7 +569,7 @@ namespace xharness
 						TestName = project.Name,
 					};
 					build32.CloneTestProject (project);
-					rv.Add (new RunDeviceTask (build32, Devices.Connected32BitIOS.Where (d => d.IsSupported (project))) { Ignored = ignored || !IncludeiOS || !IncludeiOS32, BuildOnly = project.BuildOnly });
+					projectTasks.Add (new RunDeviceTask (build32, Devices.Connected32BitIOS.Where (d => d.IsSupported (project))) { Ignored = !IncludeiOS || !IncludeiOS32 });
 
 					var todayProject = project.AsTodayExtensionProject ();
 					var buildToday = new XBuildTask {
@@ -573,7 +580,7 @@ namespace xharness
 						TestName = project.Name,
 					};
 					buildToday.CloneTestProject (todayProject);
-					rv.Add (new RunDeviceTask (buildToday, Devices.Connected64BitIOS.Where (d => d.IsSupported (project))) { Ignored = ignored || !IncludeiOSExtensions, BuildOnly = project.BuildOnly || ForceExtensionBuildOnly });
+					projectTasks.Add (new RunDeviceTask (buildToday, Devices.Connected64BitIOS.Where (d => d.IsSupported (project))) { Ignored = !IncludeiOSExtensions, BuildOnly = ForceExtensionBuildOnly });
 				}
 
 				if (!project.SkiptvOSVariation) {
@@ -586,20 +593,22 @@ namespace xharness
 						TestName = project.Name,
 					};
 					buildTV.CloneTestProject (tvOSProject);
-					rv.Add (new RunDeviceTask (buildTV, Devices.ConnectedTV.Where (d => d.IsSupported (project))) { Ignored = ignored || !IncludetvOS, BuildOnly = project.BuildOnly });
+					projectTasks.Add (new RunDeviceTask (buildTV, Devices.ConnectedTV.Where (d => d.IsSupported (project))) { Ignored = !IncludetvOS });
 				}
 
 				if (!project.SkipwatchOSVariation) {
 					var watchOSProject = project.AsWatchOSProject ();
-					var buildWatch32 = new XBuildTask {
-						Jenkins = this,
-						ProjectConfiguration = "Debug32",
-						ProjectPlatform = "iPhone",
-						Platform = TestPlatform.watchOS_32,
-						TestName = project.Name,
-					};
-					buildWatch32.CloneTestProject (watchOSProject);
-					rv.Add (new RunDeviceTask (buildWatch32, Devices.ConnectedWatch) { Ignored = ignored || !IncludewatchOS, BuildOnly = project.BuildOnly });
+					if (!project.SkipwatchOS32Variation) {
+						var buildWatch32 = new XBuildTask {
+							Jenkins = this,
+							ProjectConfiguration = "Debug32",
+							ProjectPlatform = "iPhone",
+							Platform = TestPlatform.watchOS_32,
+							TestName = project.Name,
+						};
+						buildWatch32.CloneTestProject (watchOSProject);
+						projectTasks.Add (new RunDeviceTask (buildWatch32, Devices.ConnectedWatch) { Ignored = !IncludewatchOS });
+					}
 
 					if (!project.SkipwatchOSARM64_32Variation) {
 						var buildWatch64_32 = new XBuildTask {
@@ -610,9 +619,15 @@ namespace xharness
 							TestName = project.Name,
 						};
 						buildWatch64_32.CloneTestProject (watchOSProject);
-						rv.Add (new RunDeviceTask (buildWatch64_32, Devices.ConnectedWatch32_64.Where (d => d.IsSupported (project))) { Ignored = ignored || !IncludewatchOS, BuildOnly = project.BuildOnly });
+						projectTasks.Add (new RunDeviceTask (buildWatch64_32, Devices.ConnectedWatch32_64.Where (d => d.IsSupported (project))) { Ignored = !IncludewatchOS });
 					}
 				}
+				foreach (var task in projectTasks) {
+					task.TimeoutMultiplier = project.TimeoutMultiplier;
+					task.BuildOnly |= project.BuildOnly;
+					task.Ignored |= ignored;
+				}
+				rv.AddRange (projectTasks);
 			}
 
 			return CreateTestVariations (rv, (buildTask, test, candidates) => new RunDeviceTask (buildTask, candidates?.Cast<Device> () ?? test.Candidates));
@@ -666,10 +681,6 @@ namespace xharness
 		{
 			// https://github.com/xamarin/maccore/issues/1008
 			ForceExtensionBuildOnly = true;
-
-			// https://github.com/xamarin/maccore/issues/1011
-			foreach (var mono in Harness.IOSTestProjects.Where (x => x.Name == "mini"))
-				mono.BuildOnly = true;
 		}
 
 		void SelectTestsByModifiedFiles (int pull_request)
@@ -689,8 +700,7 @@ namespace xharness
 				"tools/common",
 				"tools/linker",
 				"src/ObjCRuntime/Registrar.cs",
-				"external/mono",
-				"external/llvm",
+				"mk/mono.mk",
 				"msbuild",
 			};
 			var mmp_prefixes = new string [] {
@@ -700,14 +710,13 @@ namespace xharness
 				"tools/common",
 				"tools/linker",
 				"src/ObjCRuntime/Registrar.cs",
-				"external/mono",
+				"mk/mono.mk",
 				"msbuild",
 			};
 			var bcl_prefixes = new string [] {
 				"tests/bcl-test",
 				"tests/common",
-				"external/mono",
-				"external/llvm",
+				"mk/mono.mk",
 			};
 			var btouch_prefixes = new string [] {
 				"src/btouch.cs",
@@ -752,13 +761,30 @@ namespace xharness
 		void SelectTestsByLabel (int pull_request)
 		{
 			var labels = new HashSet<string> ();
-			labels.UnionWith (Harness.Labels);
-			if (pull_request > 0)
-				labels.UnionWith (GitHub.GetLabels (Harness, pull_request));
+			if (Harness.Labels.Any ()) {
+				labels.UnionWith (Harness.Labels);
+				MainLog.WriteLine ($"{Harness.Labels.Count} label(s) were passed on the command line.");
+			} else {
+				MainLog.WriteLine ($"No labels were passed on the command line.");
+			}
+			if (pull_request > 0) {
+				var lbls = GitHub.GetLabels (Harness, pull_request);
+				if (lbls.Any ()) {
+					labels.UnionWith (lbls);
+					MainLog.WriteLine ($"Found {lbls.Count ()} label(s) in the pull request #{pull_request}: {string.Join (", ", lbls)}");
+				} else {
+					MainLog.WriteLine ($"No labels were found in the pull request #{pull_request}.");
+				}
+			}
 			var env_labels = Environment.GetEnvironmentVariable ("XHARNESS_LABELS");
-			if (!string.IsNullOrEmpty (env_labels))
-				labels.UnionWith (env_labels.Split (new char [] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-			MainLog.WriteLine ("Found {1} label(s) in the pull request #{2}: {0}", string.Join (", ", labels.ToArray ()), labels.Count (), pull_request);
+			if (!string.IsNullOrEmpty (env_labels)) {
+				var lbls = env_labels.Split (new char [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+				labels.UnionWith (lbls);
+				MainLog.WriteLine ($"Found {lbls.Count ()} label(s) in the environment variable XHARNESS_LABELS: {string.Join (", ", lbls)}");
+			} else {
+				MainLog.WriteLine ($"No labels were in the environment variable XHARNESS_LABELS.");
+			}
+			MainLog.WriteLine ($"In total found {labels.Count ()} label(s): {string.Join (", ", labels.ToArray ())}");
 
 			// disabled by default
 			SetEnabled (labels, "mtouch", ref IncludeMtouch);
@@ -1160,7 +1186,6 @@ namespace xharness
 				if (Harness.InWrench)
 					log = Log.CreateAggregatedLog (log, new ConsoleLog ());
 				Harness.HarnessLog = MainLog = log;
-				Harness.HarnessLog.Timestamp = true;
 
 				var tasks = new List<Task> ();
 				if (IsServerMode)
@@ -1176,7 +1201,6 @@ namespace xharness
 				}
 				if (!string.IsNullOrEmpty (Harness.PeriodicCommand)) {
 					var periodic_log = Logs.Create ("PeriodicCommand.log", "Periodic command log");
-					periodic_log.Timestamp = true;
 					Task.Run (async () => await ExecutePeriodicCommandAsync (periodic_log));
 				}
 
@@ -1300,7 +1324,7 @@ namespace xharness
 							break;
 						case "/set-option":
 							response.ContentType = System.Net.Mime.MediaTypeNames.Text.Plain;
-														switch (request.Url.Query) {
+							switch (request.Url.Query) {
 							case "?clean":
 								CleanSuccessfulTestRuns = true;
 								break;
@@ -1439,6 +1463,7 @@ namespace xharness
 										writer.WriteLine ($"Test '{task.TestName}' is already executing.");
 									} else {
 										task.Reset ();
+										task.BuildOnly = false;
 										task.RunAsync ();
 									}
 								}
@@ -1481,17 +1506,21 @@ namespace xharness
 							server.Stop ();
 							break;
 						case "/favicon.ico":
-							var favicon = File.ReadAllBytes (Path.Combine (Harness.RootDirectory, "xharness", "favicon.ico"));
-							response.OutputStream.Write (favicon, 0, favicon.Length);
-							response.OutputStream.Close ();
-							break;
-						case "/xharness.css":
-						case "/xharness.js":
-							serveFile = Path.Combine (Path.GetDirectoryName (System.Reflection.Assembly.GetExecutingAssembly ().Location), request.Url.LocalPath.Substring (1));
+							serveFile = Path.Combine (Harness.RootDirectory, "xharness", "favicon.ico");
 							goto default;
+						case "/index.html":
+							var redirect_to = request.Url.AbsoluteUri.Replace ("/index.html", "/" + Path.GetFileName (LogDirectory) + "/index.html");
+							response.Redirect (redirect_to);
+							break;
 						default:
+							var filename = Path.GetFileName (request.Url.LocalPath);
+							if (filename == "index.html" && Path.GetFileName (LogDirectory) == Path.GetFileName (Path.GetDirectoryName (request.Url.LocalPath))) {
+									// We're asked for the report for the current test run, so re-generate it.
+								GenerateReport ();
+							}
+
 							if (serveFile == null)
-								serveFile = Path.Combine (LogDirectory, request.Url.LocalPath.Substring (1));
+								serveFile = Path.Combine (Path.GetDirectoryName (LogDirectory), request.Url.LocalPath.Substring (1));
 							var path = serveFile;
 							if (File.Exists (path)) {
 								var buffer = new byte [4096];
@@ -1508,6 +1537,9 @@ namespace xharness
 									case ".js":
 										response.ContentType = "text/javascript";
 										break;
+									case ".ico":
+										response.ContentType = "image/png";
+										break;
 									default:
 										response.ContentType = System.Net.Mime.MediaTypeNames.Text.Plain;
 										break;
@@ -1516,6 +1548,7 @@ namespace xharness
 										response.OutputStream.Write (buffer, 0, read);
 								}
 							} else {
+								Console.WriteLine ($"404: {request.Url.LocalPath}");
 								response.StatusCode = 404;
 								response.OutputStream.WriteByte ((byte) '?');
 							}
@@ -1535,7 +1568,7 @@ namespace xharness
 			};
 			thread.Start ();
 
-			var url = $"http://localhost:{port}/";
+			var url = $"http://localhost:{port}/" + Path.GetFileName (LogDirectory) + "/index.html";
 			Console.WriteLine ($"Launching {url} in the system's default browser.");
 			Process.Start ("open", url);
 
@@ -1619,7 +1652,7 @@ namespace xharness
 					var report = Path.Combine (LogDirectory, "index.html");
 					var tmpreport = Path.Combine (LogDirectory, $"index-{Harness.Timestamp}.tmp.html");
 					var tmpmarkdown = string.IsNullOrEmpty (Harness.MarkdownSummaryPath) ? string.Empty : (Harness.MarkdownSummaryPath + $".{Harness.Timestamp}.tmp");
-					using (var stream = new FileStream (tmpreport, FileMode.CreateNew, FileAccess.ReadWrite)) {
+					using (var stream = new FileStream (tmpreport, FileMode.Create, FileAccess.ReadWrite)) {
 						using (var markdown_writer = (string.IsNullOrEmpty (tmpmarkdown) ? null : new StreamWriter (tmpmarkdown))) {
 							GenerateReportImpl (stream, markdown_writer);
 						}
@@ -1636,12 +1669,31 @@ namespace xharness
 					foreach (var file in new string [] { "xharness.js", "xharness.css" }) {
 						File.Copy (Path.Combine (dependentFileLocation, file), Path.Combine (LogDirectory, file), true);
 					}
+					File.Copy (Path.Combine (Harness.RootDirectory, "xharness", "favicon.ico"), Path.Combine (LogDirectory, "favicon.ico"), true);
 				}
 			} catch (Exception e) {
 				this.MainLog.WriteLine ("Failed to write log: {0}", e);
 			}
 		}
 
+		public bool IsHE0038Error (Log log) {
+			if (log == null)
+				return false;
+			if (File.Exists (log.FullPath) && new FileInfo (log.FullPath).Length > 0) {
+				using (var reader = log.GetReader ()) {
+					while (!reader.EndOfStream) {
+						string line = reader.ReadLine ();
+						if (line == null)
+							continue;
+						if (line.Contains ("error HE0038: Failed to launch the app"))
+							return true;
+					}
+				}
+			}
+			return false;
+		}
+		
+		string previous_test_runs;
 		void GenerateReportImpl (Stream stream, StreamWriter markdown_summary = null)
 		{
 			var id_counter = 0;
@@ -1721,7 +1773,10 @@ namespace xharness
 					markdown_summary.Write ($"# Test run in progress: ");
 					markdown_summary.Write (string.Join (", ", list));
 				} else if (failedTests.Any ()) {
-					markdown_summary.Write ($"{failedTests.Count ()} tests failed, {deviceNotFound.Count ()} tests' device not found, {passedTests.Count ()} tests passed.");
+					markdown_summary.Write ($"{failedTests.Count ()} tests failed, ");
+					if (deviceNotFound.Any ())
+						markdown_summary.Write ($"{deviceNotFound.Count ()} tests' device not found, ");
+					markdown_summary.Write ($"{passedTests.Count ()} tests passed.");
 				} else if (deviceNotFound.Any ()) {
 					markdown_summary.Write ($"{deviceNotFound.Count ()} tests' device not found, {passedTests.Count ()} tests passed.");
 				} else if (passedTests.Any ()) {
@@ -1805,7 +1860,10 @@ namespace xharness
 					writer.Write (string.Join (", ", list));
 					writer.Write (")");
 				} else if (failedTests.Any ()) {
-					writer.Write ($"{failedTests.Count ()} tests failed, {deviceNotFound.Count ()} tests' device not found, {passedTests.Count ()} tests passed");
+					writer.Write ($"{failedTests.Count ()} tests failed, ");
+					if (deviceNotFound.Any ())
+						writer.Write ($"{deviceNotFound.Count ()} tests' device not found, ");
+					writer.Write ($"{passedTests.Count ()} tests passed");
 				} else if (deviceNotFound.Any ()) {
 					writer.Write ($"{deviceNotFound.Count ()} tests' device not found, {passedTests.Count ()} tests passed");
 				} else if (passedTests.Any ()) {
@@ -1813,7 +1871,7 @@ namespace xharness
 				} else {
 					writer.Write ($"No tests selected.");
 				}
-				writer.WriteLine ("</span>");
+				writer.Write ("</span>");
 				writer.WriteLine ("</h2>");
 				if (allTasks.Count > 0) {
 					writer.WriteLine ($"<ul id='nav'>");
@@ -1821,34 +1879,34 @@ namespace xharness
 						writer.WriteLine (@"
 	<li>Select
 		<ul>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all"");'>All tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all-device"");'>All device tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all-simulator"");'>All simulator tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all-ios"");'>All iOS tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all-tvos"");'>All tvOS tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all-watchos"");'>All watchOS tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""select?all-mac"");'>All Mac tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all"");'>All tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all-device"");'>All device tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all-simulator"");'>All simulator tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all-ios"");'>All iOS tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all-tvos"");'>All tvOS tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all-watchos"");'>All watchOS tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/select?all-mac"");'>All Mac tests</a></li>
 		</ul>
 	</li>
 	<li>Deselect
 		<ul>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all"");'>All tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all-device"");'>All device tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all-simulator"");'>All simulator tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all-ios"");'>All iOS tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all-tvos"");'>All tvOS tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all-watchos"");'>All watchOS tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""deselect?all-mac"");'>All Mac tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all"");'>All tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all-device"");'>All device tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all-simulator"");'>All simulator tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all-ios"");'>All iOS tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all-tvos"");'>All tvOS tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all-watchos"");'>All watchOS tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/deselect?all-mac"");'>All Mac tests</a></li>
 		</ul>
 	</li>
 	<li>Execute
 		<ul>
-			<li class=""adminitem""><a href='javascript:sendrequest (""run?alltests"");'>Run all tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""run?selected"");'>Run all selected tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""run?failed"");'>Run all failed tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""build?all"");'>Build all tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""build?selected"");'>Build all selected tests</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""build?failed"");'>Build all failed tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/run?alltests"");'>Run all tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/run?selected"");'>Run all selected tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/run?failed"");'>Run all failed tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/build?all"");'>Build all tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/build?selected"");'>Build all selected tests</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/build?failed"");'>Build all failed tests</a></li>
 		</ul>
 	</li>");
 					}
@@ -1864,19 +1922,51 @@ namespace xharness
 						writer.WriteLine ($@"
 	<li>Reload
 		<ul>
-			<li class=""adminitem""><a href='javascript:sendrequest (""reload-devices"");'>Devices</a></li>
-			<li class=""adminitem""><a href='javascript:sendrequest (""reload-simulators"");'>Simulators</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/reload-devices"");'>Devices</a></li>
+			<li class=""adminitem""><a href='javascript:sendrequest (""/reload-simulators"");'>Simulators</a></li>
 		</ul>
 	</li>
 
 	<li>Options
 			<ul>
-				<li class=""adminitem""><span id='{id_counter++}' class='autorefreshable'><a href='javascript:sendrequest (""set-option?{(CleanSuccessfulTestRuns ? "do-not-clean" : "clean")}"");'>&#x{(CleanSuccessfulTestRuns ? "2705" : "274C")} Clean successful test runs</a></span></li>
-				<li class=""adminitem""><span id='{id_counter++}' class='autorefreshable'><a href='javascript:sendrequest (""set-option?{(UninstallTestApp ? "do-not-uninstall-test-app" : "uninstall-test-app")}"");'>&#x{(UninstallTestApp ? "2705" : "274C")} Uninstall the app from device before and after the test run</a></span></li>
-				<li class=""adminitem""><span id='{id_counter++}' class='autorefreshable'><a href='javascript:sendrequest (""set-option?{(Harness.IncludeSystemPermissionTests ? "skip-permission-tests" : "include-permission-tests")}"");'>&#x{(Harness.IncludeSystemPermissionTests ? "2705" : "274C")} Run tests that require system permissions (might put up permission dialogs)</a></span></li>
+				<li class=""adminitem""><span id='{id_counter++}' class='autorefreshable'><a href='javascript:sendrequest (""/set-option?{(CleanSuccessfulTestRuns ? "do-not-clean" : "clean")}"");'>&#x{(CleanSuccessfulTestRuns ? "2705" : "274C")} Clean successful test runs</a></span></li>
+				<li class=""adminitem""><span id='{id_counter++}' class='autorefreshable'><a href='javascript:sendrequest (""/set-option?{(UninstallTestApp ? "do-not-uninstall-test-app" : "uninstall-test-app")}"");'>&#x{(UninstallTestApp ? "2705" : "274C")} Uninstall the app from device before and after the test run</a></span></li>
+				<li class=""adminitem""><span id='{id_counter++}' class='autorefreshable'><a href='javascript:sendrequest (""/set-option?{(Harness.IncludeSystemPermissionTests ? "skip-permission-tests" : "include-permission-tests")}"");'>&#x{(Harness.IncludeSystemPermissionTests ? "2705" : "274C")} Run tests that require system permissions (might put up permission dialogs)</a></span></li>
 			</ul>
 	</li>
 	");
+						if (previous_test_runs == null) {
+							var sb = new StringBuilder ();
+							var previous = Directory.GetDirectories (Path.GetDirectoryName (LogDirectory)).
+									Select ((v) => Path.Combine (v, "index.html")).
+									    Where (File.Exists);
+							if (previous.Any ()) {
+								sb.AppendLine ("\t<li>Previous test runs");
+								sb.AppendLine ("\t\t<ul>");
+								foreach (var prev in previous.OrderBy ((v) => v).Reverse ()) {
+									var dir = Path.GetFileName (Path.GetDirectoryName (prev));
+									var ts = dir;
+									var description = File.ReadAllLines (prev).Where ((v) => v.StartsWith ("<h2", StringComparison.Ordinal)).FirstOrDefault ();
+									if (description != null) {
+										description = description.Substring (description.IndexOf ('>') + 1); // <h2 ...>
+										description = description.Substring (description.IndexOf ('>') + 1); // <span id= ...>
+
+										var h2end = description.LastIndexOf ("</h2>", StringComparison.Ordinal);
+										if (h2end > -1)
+											description = description.Substring (0, h2end);
+										description = description.Substring (0, description.LastIndexOf ('<'));
+									} else {
+										description = "<unknown state>";
+									}
+									sb.AppendLine ($"\t\t\t<li class=\"adminitem\"><a href='/{dir}/index.html'>{ts}: {description}</a></li>");
+								}
+								sb.AppendLine ("\t\t</ul>");
+								sb.AppendLine ("\t</li>");
+							}
+							previous_test_runs = sb.ToString ();
+						}
+						if (!string.IsNullOrEmpty (previous_test_runs))
+							writer.Write (previous_test_runs);
 					}
 					writer.WriteLine ("</ul>");
 				}
@@ -1917,7 +2007,7 @@ namespace xharness
 						writer.Write ($"<span id='button_container2_{groupId}' class='expander' onclick='javascript: toggleContainerVisibility2 (\"{groupId}\");'>{defaultExpander}</span>");
 						writer.Write ($"<span id='x{id_counter++}' class='p1 autorefreshable' onclick='javascript: toggleContainerVisibility2 (\"{groupId}\");'>{group.Key}{RenderTextStates (group)}</span>");
 						if (IsServerMode) {
-							var groupIds = string.Join (",", group.Select ((v) => v.ID.ToString ()));
+							var groupIds = string.Join (",", group.Where ((v) => string.IsNullOrEmpty (v.KnownFailure)).Select ((v) => v.ID.ToString ()));
 							writer.Write ($" <span class='runall'><a href='javascript: runtest (\"{groupIds}\");'>Run all</a> <a href='javascript: buildtest (\"{groupIds}\");'>Build all</a></span>");
 						}
 						writer.WriteLine ("</div>");
@@ -1938,7 +2028,7 @@ namespace xharness
 							writer.Write ($"<span id='button_container2_{modeGroupId}' class='expander' onclick='javascript: toggleContainerVisibility2 (\"{modeGroupId}\");'>{defaultExpander}</span>");
 							writer.Write ($"<span id='x{id_counter++}' class='p2 autorefreshable' onclick='javascript: toggleContainerVisibility2 (\"{modeGroupId}\");'>{modeGroup.Key}{RenderTextStates (modeGroup)}</span>");
 							if (IsServerMode) {
-								var modeGroupIds = string.Join (",", modeGroup.Select ((v) => v.ID.ToString ()));
+								var modeGroupIds = string.Join (",", modeGroup.Where ((v) => string.IsNullOrEmpty (v.KnownFailure)).Select ((v) => v.ID.ToString ()));
 								writer.Write ($" <span class='runall'><a href='javascript: runtest (\"{modeGroupIds}\");'>Run all</a> <a href='javascript: buildtest (\"{modeGroupIds}\");'>Build all</a></span>");
 							}
 							writer.WriteLine ("</div>");
@@ -1968,7 +2058,11 @@ namespace xharness
 
 							writer.Write ($"<div class='pdiv {ignoredClass}'>");
 							writer.Write ($"<span id='button_{log_id}' class='expander' onclick='javascript: toggleLogVisibility (\"{log_id}\");'>{defaultExpander}</span>");
-							writer.Write ($"<span id='x{id_counter++}' class='p3 autorefreshable' onclick='javascript: toggleLogVisibility (\"{log_id}\");'>{title} (<span style='color: {GetTestColor (test)}'>{state}</span>{buildOnly}) </span>");
+							// we have a very common error we want to make this easier for the person that is dealing with the results
+							var knownFailure = string.Empty;
+							if (!string.IsNullOrEmpty (test.KnownFailure))
+								knownFailure = $" {test.KnownFailure}";
+							writer.Write ($"<span id='x{id_counter++}' class='p3 autorefreshable' onclick='javascript: toggleLogVisibility (\"{log_id}\");'>{title} (<span style='color: {GetTestColor (test)}'>{state}{knownFailure}</span>{buildOnly}) </span>");
 							if (IsServerMode) {
 								writer.Write ($" <span id='x{id_counter++}' class='autorefreshable'>");
 								if (test.Waiting) {
@@ -1987,6 +2081,9 @@ namespace xharness
 							var testAssemblies = test.ReferencedNunitAndXunitTestAssemblies;
 							if (testAssemblies.Any ())
 								writer.WriteLine ($"Test assemblies:<br/>- {String.Join ("<br/>- ", testAssemblies)}<br />");
+
+							if (!string.IsNullOrEmpty (test.KnownFailure))
+								writer.WriteLine ($"Known failure: {test.KnownFailure} <br />");
 
 							if (!string.IsNullOrEmpty (test.FailureMessage)) {
 								var msg = HtmlFormat (test.FailureMessage);
@@ -2043,7 +2140,18 @@ namespace xharness
 										log_target = "_self";
 										break;
 									}
-									writer.WriteLine ("<a href='{0}' type='{2}' target='{3}'>{1}</a><br />", LinkEncode (log.FullPath.Substring (LogDirectory.Length + 1)), log.Description, log_type, log_target);
+									if (log.Description == "Build log") {
+										var binlog = log.FullPath.Replace (".txt", ".binlog");
+										if (File.Exists (binlog)) {
+											var textLink = string.Format ("<a href='{0}' type='{2}' target='{3}'>{1}</a>", LinkEncode (log.FullPath.Substring (LogDirectory.Length + 1)), log.Description, log_type, log_target);
+											var binLink = string.Format ("<a href='{0}' type='{2}' target='{3}' style='display:{4}'>{1}</a><br />", LinkEncode (binlog.Substring (LogDirectory.Length + 1)), "Binlog download", log_type, log_target, test.Building ? "none" : "inline");
+											writer.Write ("{0} {1}", textLink, binLink);
+										} else {
+											writer.WriteLine ("<a href='{0}' type='{2}' target='{3}'>{1}</a><br />", LinkEncode (log.FullPath.Substring (LogDirectory.Length + 1)), log.Description, log_type, log_target);
+										}
+									} else {
+										writer.WriteLine ("<a href='{0}' type='{2}' target='{3}'>{1}</a><br />", LinkEncode (log.FullPath.Substring (LogDirectory.Length + 1)), log.Description, log_type, log_target);
+									}
 									if (log.Description == "Test log" || log.Description == "Extension test log" || log.Description == "Execution log") {
 										string summary;
 										List<string> fails;
@@ -2067,6 +2175,10 @@ namespace xharness
 													var data_tuple = (Tuple<string, List<string>>) data.Item2;
 													summary = data_tuple.Item1;
 													fails = data_tuple.Item2;
+												}
+												if (fails.Count > 100) {
+													fails.Add ("...");
+													break;
 												}
 											}
 											if (fails.Count > 0) {
@@ -2094,8 +2206,13 @@ namespace xharness
 														// Sometimes we put error messages in pull request descriptions
 														// Then Jenkins create environment variables containing the pull request descriptions (and other pull request data)
 														// So exclude any lines matching 'ghprbPull', to avoid reporting those environment variables as build errors.
-														if (line.Contains (": error") && !line.Contains ("ghprbPull"))
+														if (line.Contains (": error") && !line.Contains ("ghprbPull")) {
 															errors.Add (line);
+															if (errors.Count > 20) {
+																errors.Add ("...");
+																break;
+															}
+														}
 													}
 													log_data [log] = new Tuple<long, object> (reader.BaseStream.Length, errors);
 												} else {
@@ -2268,6 +2385,7 @@ namespace xharness
 
 		public bool RequiresXcode94;
 		public bool BuildOnly;
+		public string KnownFailure;
 
 		// VerifyRun is called in RunInternalAsync/ExecuteAsync to verify that the task can be executed/run.
 		// Typically used to fail tasks that don't have an available device, or if there's not enough disk space.
@@ -2697,7 +2815,7 @@ namespace xharness
 	{
 		public bool SpecifyPlatform = true;
 		public bool SpecifyConfiguration = true;
-
+		
 		public override string Mode {
 			get { return Platform.ToString (); }
 			set { throw new NotSupportedException (); }
@@ -2856,7 +2974,6 @@ namespace xharness
 					make.StartInfo.Arguments = Target;
 					SetEnvironmentVariables (make);
 					var log = Logs.Create ($"make-{Platform}-{Timestamp}.txt", "Build log");
-					log.Timestamp = true;
 					LogEvent (log, "Making {0} in {1}", Target, WorkingDirectory);
 					if (!Harness.DryRun) {
 						var timeout = Timeout;
@@ -2886,6 +3003,7 @@ namespace xharness
 		{
 			using (var resource = await NotifyAndAcquireDesktopResourceAsync ()) {
 				var log = Logs.Create ($"build-{Platform}-{Timestamp}.txt", "Build log");
+				var binlogPath = log.FullPath.Replace (".txt", ".binlog");
 
 				await RestoreNugetsAsync (log, resource, useXIBuild: true);
 
@@ -2894,6 +3012,7 @@ namespace xharness
 					var args = new StringBuilder ();
 					args.Append ("-- ");
 					args.Append ("/verbosity:diagnostic ");
+					args.Append ($"/bl:\"{binlogPath}\" ");
 					if (SpecifyPlatform)
 						args.Append ($"/p:Platform={ProjectPlatform} ");
 					if (SpecifyConfiguration)
@@ -3052,7 +3171,6 @@ namespace xharness
 			using (var resource = await NotifyAndAcquireDesktopResourceAsync ()) {
 				var xmlLog = Logs.CreateFile ($"log-{Timestamp}.xml", "XML log");
 				var log = Logs.Create ($"execute-{Timestamp}.txt", "Execution log");
-				log.Timestamp = true;
 				FindNUnitConsoleExecutable (log);
 				using (var proc = new Process ()) {
 
@@ -3239,7 +3357,6 @@ namespace xharness
 					proc.StartInfo.EnvironmentVariables ["MONO_DEBUG"] = "no-gdb-backtrace";
 					Jenkins.MainLog.WriteLine ("Executing {0} ({1})", TestName, Mode);
 					var log = Logs.Create ($"execute-{Platform}-{Timestamp}.txt", "Execution log");
-					log.Timestamp = true;
 					if (!Harness.DryRun) {
 						ExecutionResult = TestExecutingResult.Running;
 
@@ -3331,6 +3448,7 @@ namespace xharness
 	abstract class RunTestTask : TestTask
 	{
 		public readonly BuildToolTask BuildTask;
+		public double TimeoutMultiplier { get; set; } = 1;
 
 		public RunTestTask (BuildToolTask build_task)
 		{
@@ -3598,6 +3716,7 @@ namespace xharness
 						DeviceName = Device.Name,
 						CompanionDeviceName = CompanionDevice?.Name,
 						Configuration = ProjectConfiguration,
+						TimeoutMultiplier = TimeoutMultiplier,
 					};
 
 					// Sometimes devices can't upgrade (depending on what has changed), so make sure to uninstall any existing apps first.
@@ -3612,7 +3731,7 @@ namespace xharness
 
 					if (!Failed) {
 						// Install the app
-						this.install_log = new AppInstallMonitorLog (Logs.Create ($"install-{Timestamp}.log", "Install log", timestamp: true));
+						this.install_log = new AppInstallMonitorLog (Logs.Create ($"install-{Timestamp}.log", "Install log"));
 						try {
 							runner.MainLog = this.install_log;
 							var install_result = await runner.InstallAsync (install_log.CancellationToken );
@@ -3761,6 +3880,7 @@ namespace xharness
 				LogDirectory = LogDirectory,
 				MainLog = Logs.Create ($"run-{Device.UDID}-{Timestamp}.log", "Run log"),
 				Configuration = ProjectConfiguration,
+				TimeoutMultiplier = TimeoutMultiplier,
 			};
 			runner.Simulators = Simulators;
 			runner.Initialize ();
@@ -3808,6 +3928,10 @@ namespace xharness
 				await runner.RunAsync ();
 			}
 			ExecutionResult = runner.Result;
+
+			KnownFailure = null;
+			if (Jenkins.IsHE0038Error (runner.MainLog))
+				KnownFailure = $"<a href='https://github.com/xamarin/maccore/issues/581'>HE0038</a>";
 		}
 
 		protected override string XIMode {

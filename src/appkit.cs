@@ -2405,7 +2405,7 @@ namespace AppKit {
 		[Export ("keyEquivalent")]
 		string KeyEquivalent { get; }
 	
-		[Export ("formatter", ArgumentSemantic.Retain)]
+		[Export ("formatter", ArgumentSemantic.Retain), NullAllowed]
 		NSFormatter Formatter { get; set; }
 	
 		[Export ("objectValue", ArgumentSemantic.Copy), NullAllowed]
@@ -4795,8 +4795,12 @@ namespace AppKit {
 		[Export ("font")]
 		NSFont Font { get; set; }
 
-		[Export ("formatter", ArgumentSemantic.Retain)]
+		[Export ("formatter", ArgumentSemantic.Retain), NullAllowed]
+#if XAMCORE_4_0
+		NSFormatter Formatter { get; set; }
+#else
 		NSObject Formatter { get; set; }
+#endif
 
 		[Export ("objectValue", ArgumentSemantic.Copy)]
 		NSObject ObjectValue { get; set; }
@@ -10292,7 +10296,7 @@ namespace AppKit {
 		void ResetCursorRects ();
 
 		[Export ("setToolTip:forCell:")]
-		void SetToolTipForCell (string toolTipString, NSCell cell);
+		void SetToolTipForCell ([NullAllowed] string toolTipString, NSCell cell);
 
 		[Export ("toolTipForCell:")]
 		string ToolTipForCell (NSCell cell);
@@ -13697,7 +13701,7 @@ namespace AppKit {
 		NSMenu GetMenu (nint forSegment);
 
 		[Export ("setToolTip:forSegment:")]
-		void SetToolTip (string toolTip, nint forSegment);
+		void SetToolTip ([NullAllowed] string toolTip, nint forSegment);
 
 		[Export ("toolTipForSegment:")]
 		string GetToolTip (nint forSegment);

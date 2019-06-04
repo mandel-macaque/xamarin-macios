@@ -269,6 +269,18 @@ namespace Foundation {
 			}
 		}
 
+		bool allowsCellularAccess;
+
+		public bool AllowsCellularAccess {
+			get {
+				return allowsCellularAccess;
+			}
+			set {
+				EnsureModifiability ();
+				allowsCellularAccess = value;
+			}
+		}
+
 		ICredentials credentials;
 
 		public ICredentials Credentials {
@@ -471,7 +483,7 @@ namespace Foundation {
 			}
 
 			var nsrequest = new NSMutableUrlRequest {
-				AllowsCellularAccess = true,
+				AllowsCellularAccess = allowsCellularAccess,
 				CachePolicy = DisableCaching ? NSUrlRequestCachePolicy.ReloadIgnoringCacheData : NSUrlRequestCachePolicy.UseProtocolCachePolicy,
 				HttpMethod = request.Method.ToString ().ToUpperInvariant (),
 				Url = NSUrl.FromString (request.RequestUri.AbsoluteUri),
