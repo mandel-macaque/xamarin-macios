@@ -18,13 +18,6 @@ using IntPtr=System.IntPtr;
 
 namespace Network {
 
-	[Watch (6,0), TV (13,0), Mac (10,15), iOS (13,0)]
-	public enum NWIPLocalAddressPreference {
-		Default = 0,
-		Temporary = 1,
-		Stable = 2,
-	}
-
 	[TV (12,0), Mac (10,14), iOS (12,0)]
 	[Watch (6,0)]
 	public class NWProtocolOptions : NativeObject {
