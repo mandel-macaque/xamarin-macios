@@ -408,6 +408,68 @@ namespace MonoTouchFixtures.Network {
 				Assert.True (parameters.ProhibitConstrained, "New value was not stored.");
 			}
 		}
+
+		[Test]
+		public void TestTcpNotSecureConstructor ()
+		{
+			TestRuntime.AssertXcodeVersion (11, 0);
+			using (var tcpOptions = new NWProtocolTcpOptions ())
+			using (var parameters = new NWParameters (tcpOptions)) {
+				// check that we do have the correct transport protocol
+				Assert.IsNotNull (parameters.ProtocolStack.TransportProtocol, "TransportProtocol");
+				Assert.IsTrue (parameters.ProtocolStack.TransportProtocol is NWProtocolTcpOptions, "Transport protocol type.");
+			}
+		}
+
+		[Test]
+		public void TestTcpSecureConnectionConstructor ()
+		{
+			TestRuntime.AssertXcodeVersion (11, 0);
+			using (var tcpOptions = new NWProtocolTcpOptions ())
+			using (var tlsOptions = new NWProtocolTlsOptions ())
+			using (var parameters = new NWParameters (tcpOptions, tlsOptions)) {
+				Assert.IsNotNull (parameters.ProtocolStack.TransportProtocol, "TransportProtocol");
+				Assert.IsTrue (parameters.ProtocolStack.TransportProtocol is NWProtocolTcpOptions, "Transport protocol type.");
+				// iterate over the protocols, we should have single one that is tls
+				var myStackProtocols = new List<NWProtocolOptions> ();
+				parameters.ProtocolStack.IterateProtocols ((options) => {
+					myStackProtocols.Add (options);
+				});
+				Assert.AreEqual (1, myStackProtocols.Count, "Protocol count");
+				Assert.IsTrue (myStackProtocols [0] is NWProtocolTlsOptions);
+			}
+		}
+
+		[Test]
+		public void TestUdNotSecureConnection ()
+		{
+			TestRuntime.AssertXcodeVersion (11, 0);
+			using (var tcpOptions = new NWProtocolUdpOptions ())
+			using (var parameters = new NWParameters (tcpOptions)) {
+				// check that we do have the correct transport protocol
+				Assert.IsNotNull (parameters.ProtocolStack.TransportProtocol, "TransportProtocol");
+				Assert.IsTrue (parameters.ProtocolStack.TransportProtocol is NWProtocolUdpOptions, "Transport protocol type.");
+			}
+		}
+
+		[Test]
+		public void TestUdpSecureConnection ()
+		{
+			TestRuntime.AssertXcodeVersion (11, 0);
+			using (var tcpOptions = new NWProtocolUdpOptions ())
+			using (var tlsOptions = new NWProtocolTlsOptions ())
+			using (var parameters = new NWParameters (tcpOptions, tlsOptions)) {
+				Assert.IsNotNull (parameters.ProtocolStack.TransportProtocol, "TransportProtocol");
+				Assert.IsTrue (parameters.ProtocolStack.TransportProtocol is NWProtocolUdpOptions, "Transport protocol type.");
+				// iterate over the protocols, we should have single one that is tls
+				var myStackProtocols = new List<NWProtocolOptions> ();
+				parameters.ProtocolStack.IterateProtocols ((options) => {
+					myStackProtocols.Add (options);
+				});
+				Assert.AreEqual (1, myStackProtocols.Count, "Protocol count");
+				Assert.IsTrue (myStackProtocols [0] is NWProtocolTlsOptions);
+			}
+		}
 	}
 }
 #endif

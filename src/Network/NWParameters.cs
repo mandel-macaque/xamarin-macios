@@ -185,6 +185,30 @@ namespace Network {
 			InitializeHandle (nw_parameters_create ());
 		}
 
+		public NWParameters (NWProtocolTcpOptions tcp, NWProtocolTlsOptions tls=null) : this ()
+		{
+			if (tcp == null)
+				throw new ArgumentNullException (nameof (tcp));
+
+			var stack = ProtocolStack;
+			if (tls != null)
+				stack.PrependApplicationProtocol (tls);
+
+			stack.TransportProtocol = tcp;
+		}
+
+		public NWParameters (NWProtocolUdpOptions udp, NWProtocolTlsOptions tls=null) : this ()
+		{
+			if (udp == null)
+				throw new ArgumentNullException (nameof (udp));
+
+			var stack = ProtocolStack;
+			if (tls != null)
+				stack.PrependApplicationProtocol (tls);
+
+			stack.TransportProtocol = udp;
+		}
+
 		[DllImport (Constants.NetworkLibrary)]
 		static extern nw_parameters_t nw_parameters_copy (nw_parameters_t handle);
 
