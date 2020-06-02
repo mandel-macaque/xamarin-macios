@@ -1,0 +1,5 @@
+variables:
+  - name: XI_PACKAGE
+  - name: XM_PACKAGE
+  - name: WRENCH_URL
+  - name: BUILD_REVISION 
