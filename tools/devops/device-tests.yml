@@ -28,6 +28,9 @@ jobs:
   - checkout: maccore
     persistCredentials: true
 
+  - bash: make -C xamarin-macios git-clean-all
+    displayName: 'Clean workspace'
+
   - bash: ./xamarin-macios/tools/devops/system-info.sh
     displayName: System info
 
