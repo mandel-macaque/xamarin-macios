@@ -69,6 +69,7 @@ namespace Security {
 		Pkcs12VerifyFailure 				= -25264,
 		NotSigner 							= -26267,
 		MissingEntitlement				= -34018,
+		RestrictedApi                       = -34020,
 		ServiceNotAvailable 				= -67585,
 		InsufficientClientID 				= -67586,
 		DeviceReset 						= -67587,
@@ -394,6 +395,7 @@ namespace Security {
 		CertificatePolicyNotAllowed         = -67899,
 		CertificateNameNotAllowed           = -67900,
 		CertificateValidityPeriodTooLong    = -67901,
+		CertificateIsCA                     = -67902,
 	}
 
 	// typedef uint32_t SecPadding;
@@ -447,9 +449,17 @@ namespace Security {
 	public enum SecAuthenticationUI {
 		NotSet = -1,
 
+		[Deprecated (PlatformName.MacOSX, 11,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
+		[Deprecated (PlatformName.iOS, 14,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
+		[Deprecated (PlatformName.TvOS, 14,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
+		[Deprecated (PlatformName.WatchOS, 7,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
 		[Field ("kSecUseAuthenticationUIAllow")]
 		Allow,
 
+		[Deprecated (PlatformName.MacOSX, 11,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
+		[Deprecated (PlatformName.iOS, 14,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
+		[Deprecated (PlatformName.TvOS, 14,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
+		[Deprecated (PlatformName.WatchOS, 7,0, message: "Use 'LAContext.InteractionNotAllowed' instead.")]
 		[Field ("kSecUseAuthenticationUIFail")]
 		Fail,
 

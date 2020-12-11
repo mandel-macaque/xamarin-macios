@@ -53,7 +53,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -80,9 +79,6 @@ namespace Xamarin.Bundler
 {
 	public partial class Driver {
 		internal const string NAME = "mtouch";
-		internal const string PRODUCT = "Xamarin.iOS";
-		const string LOCAL_BUILD_DIR = "_ios-build";
-		const string FRAMEWORK_LOCATION_VARIABLE = "MD_MTOUCH_SDK_ROOT";
 
 		public static void ShowHelp (OptionSet os)
 		{
@@ -120,8 +116,6 @@ namespace Xamarin.Bundler
 			Embeddinator,
 		}
 
-		static Version min_xcode_version = new Version (6, 0);
-
 		//
 		// Output generation
 		static string dotfile;
@@ -150,7 +144,7 @@ namespace Xamarin.Bundler
 			switch (app.Platform) {
 			case ApplePlatform.iOS:
 			case ApplePlatform.WatchOS:
-				return Path.Combine (GetPlatformFrameworkDirectory (app), "..", "..", "32bits");
+				return Path.Combine (GetPlatformFrameworkDirectory (app), "..", "..", "32bits", app.PlatformName);
 			default:
 				throw ErrorHelper.CreateError (71, Errors.MX0071, app.Platform, "Xamarin.iOS");
 			}
@@ -161,7 +155,9 @@ namespace Xamarin.Bundler
 			switch (app.Platform) {
 			case ApplePlatform.iOS:
 			case ApplePlatform.TVOS:
-				return Path.Combine (GetPlatformFrameworkDirectory (app), "..", "..", "64bits");
+			case ApplePlatform.WatchOS:
+			case ApplePlatform.MacCatalyst:
+				return Path.Combine (GetPlatformFrameworkDirectory (app), "..", "..", "64bits", app.PlatformName);
 			default:
 				throw ErrorHelper.CreateError (71, Errors.MX0071, app.Platform, "Xamarin.iOS");
 			}
@@ -290,7 +286,7 @@ namespace Xamarin.Bundler
 			}
 
 			if (enable_llvm)
-				aot.Append ("llvm-path=").Append (FrameworkDirectory).Append ("/LLVM/bin/,");
+				aot.Append ("llvm-path=").Append (GetFrameworkCurrentDirectory (app)).Append ("/LLVM/bin/,");
 
 			aot.Append ("outfile=").Append (outputFile);
 			if (enable_llvm)
@@ -298,249 +294,6 @@ namespace Xamarin.Bundler
 			args.Add (aot.ToString ());
 			args.Add (filename);
 			return args;
-		}
-
-		static string EncodeAotSymbol (string symbol)
-		{
-			var sb = new StringBuilder ();
-			/* This mimics what the aot-compiler does */
-			foreach (var b in System.Text.Encoding.UTF8.GetBytes (symbol)) {
-				char c = (char) b;
-				if ((c >= '0' && c <= '9') ||
-					(c >= 'a' && c <= 'z') ||
-					(c >= 'A' && c <= 'Z')) {
-					sb.Append (c);
-					continue;
-				}
-				sb.Append ('_');
-			}
-			return sb.ToString ();
-		}
-
-		// note: this is executed under Parallel.ForEach
-		public static string GenerateMain (Target target, IEnumerable<Assembly> assemblies, string assembly_name, Abi abi, string main_source, IList<string> registration_methods)
-		{
-			var app = target.App;
-			var assembly_externs = new StringBuilder ();
-			var assembly_aot_modules = new StringBuilder ();
-			var register_assemblies = new StringBuilder ();
-			var assembly_location = new StringBuilder ();
-			var assembly_location_count = 0;
-			var enable_llvm = (abi & Abi.LLVM) != 0;
-
-			register_assemblies.AppendLine ("\tguint32 exception_gchandle = 0;");
-			foreach (var s in assemblies) {
-				if (!s.IsAOTCompiled)
-					continue;
-				if ((abi & Abi.SimulatorArchMask) == 0) {
-					var info = s.AssemblyDefinition.Name.Name;
-					info = EncodeAotSymbol (info);
-					assembly_externs.Append ("extern void *mono_aot_module_").Append (info).AppendLine ("_info;");
-					assembly_aot_modules.Append ("\tmono_aot_register_module (mono_aot_module_").Append (info).AppendLine ("_info);");
-				}
-				string sname = s.FileName;
-				if (assembly_name != sname && IsBoundAssembly (s)) {
-					register_assemblies.Append ("\txamarin_open_and_register (\"").Append (sname).Append ("\", &exception_gchandle);").AppendLine ();
-					register_assemblies.AppendLine ("\txamarin_process_managed_exception_gchandle (exception_gchandle);");
-				}
-			}
-
-			if ((abi & Abi.SimulatorArchMask) == 0 || app.Embeddinator) {
-				var frameworks = assemblies.Where ((a) => a.BuildTarget == AssemblyBuildTarget.Framework)
-				                           .OrderBy ((a) => a.Identity, StringComparer.Ordinal);
-				foreach (var asm_fw in frameworks) {
-					var asm_name = asm_fw.Identity;
-					if (asm_fw.BuildTargetName == asm_name)
-						continue; // this is deduceable
-					var prefix = string.Empty;
-					if (!app.HasFrameworksDirectory && asm_fw.IsCodeShared)
-						prefix = "../../";
-					var suffix = string.Empty;
-					if (app.IsSimulatorBuild)
-						suffix = "/simulator";
-					assembly_location.AppendFormat ("\t{{ \"{0}\", \"{2}Frameworks/{1}.framework/MonoBundle{3}\" }},\n", asm_name, asm_fw.BuildTargetName, prefix, suffix);
-					assembly_location_count++;
-				}
-			}
-
-			try {
-				StringBuilder sb = new StringBuilder ();
-				using (var sw = new StringWriter (sb)) {
-					sw.WriteLine ("#include \"xamarin/xamarin.h\"");
-
-					if (assembly_location.Length > 0) {
-						sw.WriteLine ();
-						sw.WriteLine ("struct AssemblyLocation assembly_location_entries [] = {");
-						sw.WriteLine (assembly_location);
-						sw.WriteLine ("};");
-
-						sw.WriteLine ();
-						sw.WriteLine ("struct AssemblyLocations assembly_locations = {{ {0}, assembly_location_entries }};", assembly_location_count);
-					}
-					
-					sw.WriteLine ();
-					sw.WriteLine (assembly_externs);
-
-					sw.WriteLine ("void xamarin_register_modules_impl ()");
-					sw.WriteLine ("{");
-					sw.WriteLine (assembly_aot_modules);
-					sw.WriteLine ("}");
-					sw.WriteLine ();
-
-					sw.WriteLine ("void xamarin_register_assemblies_impl ()");
-					sw.WriteLine ("{");
-					sw.WriteLine (register_assemblies);
-					sw.WriteLine ("}");
-					sw.WriteLine ();
-
-					if (registration_methods != null) {
-						foreach (var method in registration_methods) {
-							sw.Write ("extern \"C\" void ");
-							sw.Write (method);
-							sw.WriteLine ("();");
-						}
-					}
-
-					// Burn in a reference to the profiling symbol so that the native linker doesn't remove it
-					// On iOS we can pass -u to the native linker, but that doesn't work on tvOS, where
-					// we're building with bitcode (even when bitcode is disabled, we still build with the
-					// bitcode marker, which makes the linker reject -u).
-					if (app.EnableProfiling) {
-						sw.WriteLine ("extern \"C\" { void mono_profiler_init_log (); }");
-						sw.WriteLine ("typedef void (*xamarin_profiler_symbol_def)();");
-						sw.WriteLine ("extern xamarin_profiler_symbol_def xamarin_profiler_symbol;");
-						sw.WriteLine ("xamarin_profiler_symbol_def xamarin_profiler_symbol = NULL;");
-					}
-
-					if (app.UseInterpreter) {
-						sw.WriteLine ("extern \"C\" { void mono_ee_interp_init (const char *); }");
-						sw.WriteLine ("extern \"C\" { void mono_icall_table_init (void); }");
-						sw.WriteLine ("extern \"C\" { void mono_marshal_ilgen_init (void); }");
-						sw.WriteLine ("extern \"C\" { void mono_method_builder_ilgen_init (void); }");
-						sw.WriteLine ("extern \"C\" { void mono_sgen_mono_ilgen_init (void); }");
-					}
-
-					sw.WriteLine ("void xamarin_setup_impl ()");
-					sw.WriteLine ("{");
-
-					if (app.EnableProfiling)
-						sw.WriteLine ("\txamarin_profiler_symbol = mono_profiler_init_log;");
-
-					if (app.EnableLLVMOnlyBitCode)
-						sw.WriteLine ("\tmono_jit_set_aot_mode (MONO_AOT_MODE_LLVMONLY);");
-					else if (app.UseInterpreter) {
-						sw.WriteLine ("\tmono_icall_table_init ();");
-						sw.WriteLine ("\tmono_marshal_ilgen_init ();");
-						sw.WriteLine ("\tmono_method_builder_ilgen_init ();");
-						sw.WriteLine ("\tmono_sgen_mono_ilgen_init ();");
-						sw.WriteLine ("\tmono_ee_interp_init (NULL);");
-						sw.WriteLine ("\tmono_jit_set_aot_mode (MONO_AOT_MODE_INTERP);");
-					} else if (app.IsDeviceBuild)
-						sw.WriteLine ("\tmono_jit_set_aot_mode (MONO_AOT_MODE_FULL);");
-
-					if (assembly_location.Length > 0)
-						sw.WriteLine ("\txamarin_set_assembly_directories (&assembly_locations);");
-
-					if (registration_methods != null) {
-						for (int i = 0; i < registration_methods.Count; i++) {
-							sw.Write ("\t");
-							sw.Write (registration_methods [i]);
-							sw.WriteLine ("();");
-						}
-					}
-
-					if (app.MonoNativeMode != MonoNativeMode.None) {
-						string mono_native_lib;
-						if (app.LibMonoNativeLinkMode == AssemblyBuildTarget.StaticObject)
-							mono_native_lib = "__Internal";
-						else
-							mono_native_lib = app.GetLibNativeName () + ".dylib";
-						sw.WriteLine ();
-						sw.WriteLine ($"\tmono_dllmap_insert (NULL, \"System.Native\", NULL, \"{mono_native_lib}\", NULL);");
-						sw.WriteLine ($"\tmono_dllmap_insert (NULL, \"System.Security.Cryptography.Native.Apple\", NULL, \"{mono_native_lib}\", NULL);");
-						sw.WriteLine ($"\tmono_dllmap_insert (NULL, \"System.Net.Security.Native\", NULL, \"{mono_native_lib}\", NULL);");
-						sw.WriteLine ();
-					}
-
-					if (app.EnableDebug)
-						sw.WriteLine ("\txamarin_gc_pump = {0};", app.DebugTrack.Value ? "TRUE" : "FALSE");
-					sw.WriteLine ("\txamarin_init_mono_debug = {0};", app.PackageManagedDebugSymbols ? "TRUE" : "FALSE");
-					sw.WriteLine ("\txamarin_executable_name = \"{0}\";", assembly_name);
-					sw.WriteLine ("\tmono_use_llvm = {0};", enable_llvm ? "TRUE" : "FALSE");
-					sw.WriteLine ("\txamarin_log_level = {0};", Verbosity.ToString (CultureInfo.InvariantCulture));
-					sw.WriteLine ("\txamarin_arch_name = \"{0}\";", abi.AsArchString ());
-					if (!app.IsDefaultMarshalManagedExceptionMode)
-						sw.WriteLine ("\txamarin_marshal_managed_exception_mode = MarshalManagedExceptionMode{0};", app.MarshalManagedExceptions);
-					sw.WriteLine ("\txamarin_marshal_objectivec_exception_mode = MarshalObjectiveCExceptionMode{0};", app.MarshalObjectiveCExceptions);
-					if (app.EnableDebug)
-						sw.WriteLine ("\txamarin_debug_mode = TRUE;");
-					if (!string.IsNullOrEmpty (app.MonoGCParams))
-						sw.WriteLine ("\tsetenv (\"MONO_GC_PARAMS\", \"{0}\", 1);", app.MonoGCParams);
-					foreach (var kvp in app.EnvironmentVariables)
-						sw.WriteLine ("\tsetenv (\"{0}\", \"{1}\", 1);", kvp.Key.Replace ("\"", "\\\""), kvp.Value.Replace ("\"", "\\\""));
-					sw.WriteLine ("\txamarin_supports_dynamic_registration = {0};", app.DynamicRegistrationSupported ? "TRUE" : "FALSE");
-					sw.WriteLine ("}");
-					sw.WriteLine ();
-					sw.Write ("int ");
-					sw.Write (app.IsWatchExtension ? "xamarin_watchextension_main" : "main");
-					sw.WriteLine (" (int argc, char **argv)");
-					sw.WriteLine ("{");
-					sw.WriteLine ("\tNSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];");
-					if (app.IsExtension) {
-						// the name of the executable must be the bundle id (reverse dns notation)
-						// but we do not want to impose that (ugly) restriction to the managed .exe / project name / ...
-						sw.WriteLine ("\targv [0] = (char *) \"{0}\";", Path.GetFileNameWithoutExtension (app.RootAssemblies [0]));
-						sw.WriteLine ("\tint rv = xamarin_main (argc, argv, XamarinLaunchModeExtension);");
-					} else {
-						sw.WriteLine ("\tint rv = xamarin_main (argc, argv, XamarinLaunchModeApp);");
-					}
-					sw.WriteLine ("\t[pool drain];");
-					sw.WriteLine ("\treturn rv;");
-					sw.WriteLine ("}");
-
-					sw.WriteLine ("void xamarin_initialize_callbacks () __attribute__ ((constructor));");
-					sw.WriteLine ("void xamarin_initialize_callbacks ()");
-					sw.WriteLine ("{");
-					sw.WriteLine ("\txamarin_setup = xamarin_setup_impl;");
-					sw.WriteLine ("\txamarin_register_assemblies = xamarin_register_assemblies_impl;");
-					sw.WriteLine ("\txamarin_register_modules = xamarin_register_modules_impl;");
-					sw.WriteLine ("}");
-
-					if (app.Platform == ApplePlatform.WatchOS && app.SdkVersion.Major >= 6 && app.IsWatchExtension) {
-						sw.WriteLine ();
-						sw.WriteLine ("extern \"C\" { int WKExtensionMain (int argc, char* argv[]); }");
-						sw.WriteLine ("int main (int argc, char *argv[])");
-						sw.WriteLine ("{");
-						sw.WriteLine ("\treturn WKExtensionMain (argc, argv);");
-						sw.WriteLine ("}");
-					}
-				}
-				WriteIfDifferent (main_source, sb.ToString (), true);
-			} catch (ProductException) {
-				throw;
-			} catch (Exception e) {
-				throw new ProductException (4001, true, e, Errors.MT4001, main_source);
-			}
-
-			return main_source;
-		}
-
-		[DllImport (Constants.libSystemLibrary)]
-		static extern int symlink (string path1, string path2);
-
-		public static bool Symlink (string path1, string path2)
-		{
-			return symlink (path1, path2) == 0;
-		}
-
-		[DllImport (Constants.libSystemLibrary)]
-		static extern int unlink (string pathname);
-
-		public static void FileDelete (string file)
-		{
-			// File.Delete can't always delete symlinks (in particular if the symlink points to a file that doesn't exist).
-			unlink (file);
-			// ignore any errors.
 		}
 
 		public static void CopyAssembly (string source, string target, string target_dir = null)
@@ -944,30 +697,10 @@ namespace Xamarin.Bundler
 			
 			// Allow a few actions, since these seem to always work no matter the Xcode version.
 			var accept_any_xcode_version = action == Action.ListDevices || action == Action.ListCrashReports || action == Action.ListApps || action == Action.LogDev;
-			ValidateXcode (accept_any_xcode_version, false);
+			ValidateXcode (app, accept_any_xcode_version, false);
 
-			switch (action) {
-			/* Device actions */
-			case Action.LogDev:
-			case Action.InstallDevice:
-			case Action.ListDevices:
-			case Action.IsAppInstalled:
-			case Action.ListCrashReports:
-			case Action.DownloadCrashReport:
-			case Action.KillApp:
-			case Action.KillAndLaunch:
-			case Action.LaunchDevice:
-			case Action.DebugDevice:
-			case Action.ListApps:
-			/* Simulator actions */
-			case Action.DebugSim:
-			case Action.LaunchSim:
-			case Action.InstallSim:
-			case Action.LaunchWatchApp:
-			case Action.KillWatchApp:
-			case Action.ListSimulators:
-				return CallMlaunch ();
-			}
+			if (IsMlaunchAction (action))
+				return CallMlaunch (app);
 
 			if (app.SdkVersion == null)
 				throw new ProductException (25, true, Errors.MT0025, app.PlatformName);
@@ -1007,7 +740,7 @@ namespace Xamarin.Bundler
 				throw new ProductException (82, true, Errors.MT0082);
 
 			if (cross_prefix == null)
-				cross_prefix = FrameworkDirectory;
+				cross_prefix = GetFrameworkCurrentDirectory (app);
 
 			Watch ("Setup", 1);
 
@@ -1041,6 +774,34 @@ namespace Xamarin.Bundler
 			return 0;
 		}
 
+		static bool IsMlaunchAction (Action action)
+		{
+			switch (action) {
+			/* Device actions */
+			case Action.LogDev:
+			case Action.InstallDevice:
+			case Action.ListDevices:
+			case Action.IsAppInstalled:
+			case Action.ListCrashReports:
+			case Action.DownloadCrashReport:
+			case Action.KillApp:
+			case Action.KillAndLaunch:
+			case Action.LaunchDevice:
+			case Action.DebugDevice:
+			case Action.ListApps:
+			/* Simulator actions */
+			case Action.DebugSim:
+			case Action.LaunchSim:
+			case Action.InstallSim:
+			case Action.LaunchWatchApp:
+			case Action.KillWatchApp:
+			case Action.ListSimulators:
+				return true;
+			}
+
+			return false;
+		}
+
 		static void RedirectStream (StreamReader @in, StreamWriter @out)
 		{
 			new Thread (() =>
@@ -1054,23 +815,22 @@ namespace Xamarin.Bundler
 			{ IsBackground = true }.Start ();
 		}
 
-		static string MlaunchPath {
-			get {
-				// check next to mtouch first
-				var path = Path.Combine (FrameworkBinDirectory, "mlaunch");
-				if (File.Exists (path))
-					return path;
+		static string GetMlaunchPath (Application app)
+		{
+			// check next to mtouch first
+			var path = Path.Combine (GetFrameworkBinDirectory (app), "mlaunch");
+			if (File.Exists (path))
+				return path;
 
-				// check an environment variable
-				path = Environment.GetEnvironmentVariable ("MLAUNCH_PATH");
-				if (File.Exists (path))
-					return path;
+			// check an environment variable
+			path = Environment.GetEnvironmentVariable ("MLAUNCH_PATH");
+			if (File.Exists (path))
+				return path;
 
-				throw ErrorHelper.CreateError (93, Errors.MT0093);
-			}
+			throw ErrorHelper.CreateError (93, Errors.MT0093);
 		}
 
-		static int CallMlaunch ()
+		static int CallMlaunch (Application app)
 		{
 			Log (1, "Forwarding to mlaunch");
 			using (var p = new Process ()) {
@@ -1078,7 +838,7 @@ namespace Xamarin.Bundler
 				p.StartInfo.RedirectStandardError = true;
 				p.StartInfo.RedirectStandardInput = true;
 				p.StartInfo.RedirectStandardOutput = true;
-				p.StartInfo.FileName = MlaunchPath;
+				p.StartInfo.FileName = GetMlaunchPath (app);
 
 				var sb = Environment.GetCommandLineArgs ().Skip (1).ToList ();
 				p.StartInfo.Arguments = StringUtils.FormatArguments (sb);
@@ -1167,69 +927,6 @@ namespace Xamarin.Bundler
 					throw new ProductException (5103, true, Errors.MT5103, app.Compiler, original_compiler);
 				}
 			}
-		}
-
-		static bool IsBoundAssembly (Assembly s)
-		{
-			if (s.IsFrameworkAssembly)
-				return false;
-
-			AssemblyDefinition ad = s.AssemblyDefinition;
-
-			foreach (ModuleDefinition md in ad.Modules)
-				foreach (TypeDefinition td in md.Types)
-					if (td.IsNSObject (s.Target.LinkContext))
-						return true;
-
-			return false;
-		}
-
-		struct timespec {
-			public IntPtr tv_sec;
-			public IntPtr tv_nsec;
-		}
-
-		struct stat { /* when _DARWIN_FEATURE_64_BIT_INODE is defined */
-			public uint st_dev;
-			public ushort st_mode;
-			public ushort st_nlink;
-			public ulong st_ino;
-			public uint st_uid;
-			public uint st_gid;
-			public uint st_rdev;
-			public timespec st_atimespec;
-			public timespec st_mtimespec;
-			public timespec st_ctimespec;
-			public timespec st_birthtimespec;
-			public ulong st_size;
-			public ulong st_blocks;
-			public uint st_blksize;
-			public uint st_flags;
-			public uint st_gen;
-			public uint st_lspare;
-			public ulong st_qspare_1;
-			public ulong st_qspare_2;
-		}
-
-		[DllImport (Constants.libSystemLibrary, EntryPoint = "lstat$INODE64", SetLastError = true)]
-		static extern int lstat (string path, out stat buf);
-
-		public static bool IsSymlink (string file)
-		{
-			stat buf;
-			var rv = lstat (file, out buf);
-			if (rv != 0)
-				throw new Exception (string.Format ("Could not lstat '{0}': {1}", file, Marshal.GetLastWin32Error ()));
-			const int S_IFLNK = 40960;
-			return (buf.st_mode & S_IFLNK) == S_IFLNK;
-		}
-
-		public static bool IsFrameworkAvailableInSimulator (Application app, string framework)
-		{
-			if (!GetFrameworks (app).TryGetValue (framework, out var fw))
-				return true; // Unknown framework, assume it's valid for the simulator
-
-			return fw.IsFrameworkAvailableInSimulator (app);
 		}
 	}
 }

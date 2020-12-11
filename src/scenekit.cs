@@ -67,14 +67,17 @@ using GLContext = global::OpenGL.CGLContext;
 #else
 using UIKit;
 
+#if HAS_OPENGLES
+using OpenGLES;
+using GLContext = global::OpenGLES.EAGLContext;
+#else
+using GLContext = global::Foundation.NSObject; // won't be used -> but must compile
+#endif
+
 #if WATCH
-using GLContext = global::Foundation.NSObject; // won't be used -> [NoWatch] but must compile
 using NSView = global::Foundation.NSObject; // won't be used -> [NoWatch] but must compile
 using SCNGeometryTessellator = global::Foundation.NSObject; // won't be used -> [NoWatch] but must compile
 #else
-using OpenGLES;
-
-using GLContext = global::OpenGLES.EAGLContext;
 using NSView = global::UIKit.UIView;
 #endif
 
@@ -179,6 +182,7 @@ namespace SceneKit {
 		[Deprecated (PlatformName.MacOSX, 10, 13,message: "Use 'GetAnimationPlayer' instead.")]
 		[NoWatch]
 		[Export ("animationForKey:")]
+		[return: NullAllowed]
 		CAAnimation GetAnimation (NSString key);
 
 		[Abstract]
@@ -200,11 +204,9 @@ namespace SceneKit {
 		void ResumeAnimation (NSString key);
 
 		[Abstract]
-		[Watch (3, 0)]
 		[Deprecated (PlatformName.WatchOS, 4, 0, message: "Use 'SCNAnimationPlayer.Paused' instead.")]
 		[TV (9, 0)]
 		[Deprecated (PlatformName.TvOS, 11, 0,   message: "Use 'SCNAnimationPlayer.Paused' instead.")]
-		[iOS (8, 0)]
 		[Deprecated (PlatformName.iOS, 11, 0,    message: "Use 'SCNAnimationPlayer.Paused' instead.")]
 		[Mac (10, 9)]
 		[Deprecated (PlatformName.MacOSX, 10, 13,message: "Use 'SCNAnimationPlayer.Paused' instead.")]
@@ -259,9 +261,11 @@ namespace SceneKit {
 		SCNAudioPlayer AVAudioNode (AVAudioNode audioNode);
 	
 		[Export ("willStartPlayback")]
+		[NullAllowed]
 		Action WillStartPlayback { get; set; }
 	
 		[Export ("didFinishPlayback")]
+		[NullAllowed]
 		Action DidFinishPlayback { get; set; }
 	
 		[NullAllowed, Export ("audioNode")]
@@ -286,6 +290,7 @@ namespace SceneKit {
 	
 		[Static]
 		[Export ("audioSourceNamed:")]
+		[return: NullAllowed]
 		SCNAudioSource FromFile (string fileName);
 	
 		[Export ("positional")]
@@ -397,15 +402,15 @@ namespace SceneKit {
 		[Static, Export ("camera")]
 		SCNCamera Create ();
 
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("projectionTransform")]
 		SCNMatrix4 ProjectionTransform { get; [Mac (10,9)] set; }
 
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("automaticallyAdjustsZRange")]
 		bool AutomaticallyAdjustsZRange { get; set; }
 		
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("orthographicScale")]
 		double OrthographicScale { get; set; }
 
@@ -413,7 +418,7 @@ namespace SceneKit {
 		[Deprecated (PlatformName.iOS,    11, 0,  message: "Use 'FocusDistance' instead.")]
 		[Deprecated (PlatformName.TvOS,   11, 0,  message: "Use 'FocusDistance' instead.")]
 		[Deprecated (PlatformName.WatchOS, 4, 0,  message: "Use 'FocusDistance' instead.")]
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("focalDistance")]
 		nfloat FocalDistance { get; set; }
 
@@ -421,7 +426,7 @@ namespace SceneKit {
 		[Deprecated (PlatformName.iOS,    11, 0,  message: "Use 'FocusDistance' instead.")]
 		[Deprecated (PlatformName.TvOS,   11, 0,  message: "Use 'FocusDistance' instead.")]
 		[Deprecated (PlatformName.WatchOS, 4, 0,  message: "Use 'FocusDistance' instead.")]
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("focalSize")]
 		nfloat FocalSize { get; set; }
 
@@ -429,7 +434,7 @@ namespace SceneKit {
 		[Deprecated (PlatformName.iOS,    11, 0,  message: "Use 'FStop' instead.")]
 		[Deprecated (PlatformName.TvOS,   11, 0,  message: "Use 'FStop' instead.")]
 		[Deprecated (PlatformName.WatchOS, 4, 0,  message: "Use 'FStop' instead.")]
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("focalBlurRadius")]
 		nfloat FocalBlurRadius { get; set; }
 
@@ -437,7 +442,7 @@ namespace SceneKit {
 		[Deprecated (PlatformName.iOS,    11, 0,  message: "Use 'FStop' instead with FStop = SensorHeight / Aperture.")]
 		[Deprecated (PlatformName.TvOS,   11, 0,  message: "Use 'FStop' instead with FStop = SensorHeight / Aperture.")]
 		[Deprecated (PlatformName.WatchOS, 4, 0,  message: "Use 'FStop' instead with FStop = SensorHeight / Aperture.")]
-		[iOS (8,0)][Mac (10,9)]
+		[Mac (10,9)]
 		[Export ("aperture")]
 		nfloat Aperture { get; set; }
 
@@ -521,7 +526,7 @@ namespace SceneKit {
 		[Export ("colorGrading")]
 		SCNMaterialProperty ColorGrading { get; }
 
-		[iOS (8,0)][Mac (10,10)]
+		[Mac (10,10)]
 		[Export ("categoryBitMask")]
 		nuint CategoryBitMask { get; set; }
 
@@ -860,6 +865,7 @@ namespace SceneKit {
 		nint GeometryElementCount { get;  }
 
 		[Export ("firstMaterial", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNMaterial FirstMaterial { get; set;  }
 
 		[iOS (9,0)][Mac(10,11)] // header mistake (10,10) as tests shows it does not exists
@@ -884,6 +890,7 @@ namespace SceneKit {
 		void ReplaceMaterial (nint materialIndex, SCNMaterial newMaterial);
 
 		[Export ("materialWithName:")]
+		[return: NullAllowed]
 		SCNMaterial GetMaterial (string name);
 
 		[Static]
@@ -1064,6 +1071,12 @@ namespace SceneKit {
 		[Static]
 		[Export ("geometryElementWithMDLSubmesh:")]
 		SCNGeometryElement FromSubmesh (MDLSubmesh submesh);
+
+		[NoWatch] // marked as 7,0 but there's no Metal support on the platform
+		[TV (14,0), Mac (11,0), iOS (14,0)]
+		[Static]
+		[Export ("geometryElementWithBuffer:primitiveType:primitiveCount:bytesPerIndex:")]
+		SCNGeometryElement FromBuffer (IMTLBuffer buffer, SCNGeometryPrimitiveType primitiveType, nint primitiveCount, nint bytesPerIndex);
 	}
 
 #if !WATCH
@@ -1124,7 +1137,7 @@ namespace SceneKit {
 		[Field ("SCNHitTestRootNodeKey")]
 		NSString RootNodeKey { get; }
 
-		[Mac (10,9), iOS (8,0)]
+		[Mac (10,9)]
 		[Field ("SCNHitTestIgnoreHiddenNodesKey")]
 		NSString IgnoreHiddenNodesKey { get; }
 
@@ -1177,6 +1190,7 @@ namespace SceneKit {
 
 		[TV (10, 0), Mac (10, 12), iOS (10, 0)]
 		[Export ("boneNode")]
+		[NullAllowed]
 		SCNNode BoneNode { get; }
 
 		[Export ("node")]
@@ -1250,6 +1264,7 @@ namespace SceneKit {
 		[NoTV]
 		[Availability (Deprecated = Platform.Mac_10_10)]
 		[Export ("attributeForKey:")]
+		[return: NullAllowed]
 		NSObject GetAttribute (NSString lightAttribute);
 
 #if XAMCORE_3_0
@@ -1260,10 +1275,11 @@ namespace SceneKit {
 		[NoTV]
 		[Availability (Deprecated = Platform.Mac_10_10)]
 		[Export ("setAttribute:forKey:")]
-		void SetAttribute (NSObject value, NSString attribuetKey);
+		void SetAttribute ([NullAllowed] NSObject value, NSString attribuetKey);
 
 		[Mac (10,9)]
 		[Export ("gobo")]
+		[NullAllowed]
 		SCNMaterialProperty Gobo { get; }
 
 		[TV (10, 0), Mac (10, 12), iOS (10, 0)]
@@ -1314,7 +1330,7 @@ namespace SceneKit {
 		[Export ("zFar")]
 		nfloat ZFar { get; set; }
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Export ("categoryBitMask")]
 		nuint CategoryBitMask { get; set; }
 
@@ -1809,6 +1825,7 @@ namespace SceneKit {
 		nint RenderingOrder { get; set;  }
 
 		[Export ("parentNode")]
+		[NullAllowed]
 		SCNNode ParentNode { get;  }
 
 		[Export ("childNodes")]
@@ -1862,6 +1879,7 @@ namespace SceneKit {
 		void AddChildNode (SCNNode child);
 
 		[Export ("childNodeWithName:recursively:")]
+		[return: NullAllowed]
 		SCNNode FindChildNode (string childName, bool recursively);
 
 		[Export ("childNodesPassingTest:")]
@@ -1932,7 +1950,7 @@ namespace SceneKit {
 		SCNHitTestResult [] HitTest (SCNVector3 pointA, SCNVector3 pointB, [NullAllowed] NSDictionary options);
 
 		[Wrap ("HitTest (pointA, pointB, options.GetDictionary ())")]
-		SCNHitTestResult [] HitTest (SCNVector3 pointA, SCNVector3 pointB, SCNHitTestOptions options);
+		SCNHitTestResult [] HitTest (SCNVector3 pointA, SCNVector3 pointB, SCNHitTestOptions? options);
 
 		[Mac (10,10)]
 		[Export ("eulerAngles")]
@@ -1979,6 +1997,7 @@ namespace SceneKit {
 
 		[Mac (10,10)]
 		[Export ("particleSystems")]
+		[NullAllowed]
 		SCNParticleSystem [] ParticleSystems { get; }
 
 		[Mac (10,10)]
@@ -2335,7 +2354,7 @@ namespace SceneKit {
 	[Model, Protocol]
 	interface SCNNodeRendererDelegate {
 		[Export ("renderNode:renderer:arguments:")]
-		void Render (SCNNode node, SCNRenderer renderer, [NullAllowed] NSDictionary arguments);
+		void Render (SCNNode node, SCNRenderer renderer, NSDictionary arguments);
 	}
 
 	[Watch (3,0)]
@@ -2424,7 +2443,7 @@ namespace SceneKit {
 
 		[Export ("setSemantic:forSymbol:options:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
-		void SetSemantic (NSString geometrySourceSemantic, string symbol, [NullAllowed] NSDictionary options);
+		void SetSemantic ([NullAllowed] NSString geometrySourceSemantic, string symbol, [NullAllowed] NSDictionary options);
 
 #if !WATCH
 		[NoWatch]
@@ -2433,6 +2452,7 @@ namespace SceneKit {
 #endif
 
 		[Export ("semanticForSymbol:")]
+		[return: NullAllowed]
 #if XAMCORE_4_0
 		NSString GetSemantic (string symbol);
 #else
@@ -2529,6 +2549,7 @@ namespace SceneKit {
 		SCNRenderer FromContext (IntPtr context, [NullAllowed] NSDictionary options);
 
 		[NoWatch]
+		[NoMacCatalyst]
 		[Static]
 		[Wrap ("FromContext (context.GetHandle (), options)")]
 		// GetHandle will return IntPtr.Zero is context is null
@@ -2622,31 +2643,33 @@ namespace SceneKit {
 		SCNNode RootNode { get; }
 
 		[Export ("attributeForKey:")]
+		[return: NullAllowed]
 		NSObject GetAttribute (NSString key);
 
 		[Export ("setAttribute:forKey:")]
-		void SetAttribute (NSObject attribute, NSString key);
+		void SetAttribute ([NullAllowed] NSObject attribute, NSString key);
 
 		[Static]
 		[Export ("sceneWithURL:options:error:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
+		[return: NullAllowed]
 		SCNScene FromUrl (NSUrl url, [NullAllowed] NSDictionary options, out NSError error);
 
 		[Static]
 		[Wrap ("FromUrl (url, options.GetDictionary (), out error)")]
+		[return: NullAllowed]
 		SCNScene FromUrl (NSUrl url, [NullAllowed] SCNSceneLoadingOptions options, out NSError error);
 
 		
 
-		[Mac (10,9), iOS (8,0)]
 		[Field ("SCNSceneExportDestinationURL")]
 		NSString ExportDestinationUrl { get; }
 
-		[Mac (10,10), iOS (8,0)] // More 32-bit brokenness - 17710842
+		[Mac (10,10)] // More 32-bit brokenness - 17710842
 		[Export ("physicsWorld")]
 		SCNPhysicsWorld PhysicsWorld { get; }
 
-		[Mac (10,9), iOS (8,0)]
+		[Mac (10,9)]
 		[Export ("background")]
 		SCNMaterialProperty Background { get; }
 
@@ -2654,42 +2677,44 @@ namespace SceneKit {
 		[Export ("lightingEnvironment")]
 		SCNMaterialProperty LightingEnvironment { get; }
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Export ("fogStartDistance")]
 		nfloat FogStartDistance { get; set; }
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Export ("fogEndDistance")]
 		nfloat FogEndDistance { get; set; }
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Export ("fogDensityExponent")]
 		nfloat FogDensityExponent { get; set; }
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Export ("fogColor", ArgumentSemantic.Retain)]
 		NSObject FogColor { get; set; }
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Export ("paused")]
 		bool Paused { [Bind ("isPaused")] get; set; }
 
-		[Mac (10,9), iOS (8,0)]
 		[Static, Export ("sceneNamed:")]
+		[return: NullAllowed]
 		SCNScene FromFile (string name);
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Static, Export ("sceneNamed:inDirectory:options:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
+		[return: NullAllowed]
 		SCNScene FromFile (string name, [NullAllowed] string directory, [NullAllowed] NSDictionary options);
 
-		[Mac (10,10), iOS (8,0)]
+		[Mac (10,10)]
 		[Static, Wrap ("FromFile (name, directory, options.GetDictionary ())")]
+		[return: NullAllowed]
 		SCNScene FromFile (string name, string directory, SCNSceneLoadingOptions options);
 
 		// Keeping here the same name WriteToUrl for iOS and friends because it is how it was bound
 		// initialy for macOS and having it named diferently would hurt shared code
-		[TV (10, 0), NoWatch, Mac (10, 9), iOS (10, 0)]
+		[TV (10, 0), NoWatch, iOS (10, 0)]
 		[Export ("writeToURL:options:delegate:progressHandler:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
 		bool WriteToUrl (NSUrl url,
@@ -2697,7 +2722,7 @@ namespace SceneKit {
 			[NullAllowed] ISCNSceneExportDelegate aDelegate,
 			[NullAllowed] SCNSceneExportProgressHandler exportProgressHandler);
 
-		[TV (10, 0), NoWatch, Mac (10, 9), iOS (10, 0)]
+		[TV (10, 0), NoWatch, iOS (10, 0)]
 		[Wrap ("WriteToUrl (url, options.GetDictionary (), handler, exportProgressHandler)")]
 		bool WriteToUrl (NSUrl url, SCNSceneLoadingOptions options, ISCNSceneExportDelegate handler, SCNSceneExportProgressHandler exportProgressHandler);
 
@@ -2705,6 +2730,7 @@ namespace SceneKit {
 
 		[Mac (10,10)]
 		[Export ("particleSystems")]
+		[NullAllowed]
 		SCNParticleSystem [] ParticleSystems { get; }
 
 		[Mac (10,10)]
@@ -2730,7 +2756,7 @@ namespace SceneKit {
 		[Field ("SCNSceneFrameRateAttributeKey")]
 		NSString FrameRateAttributeKey { get; }
 
-		[iOS (8,0)][Mac (10,10)]
+		[Mac (10,10)]
 		[Field ("SCNSceneUpAxisAttributeKey")]
 		NSString UpAxisAttributeKey { get; }
 
@@ -2775,25 +2801,31 @@ namespace SceneKit {
 	[DisableDefaultCtor]
 	interface SCNSceneSource {
 		[Export ("url")]
+		[NullAllowed]
 		NSUrl Url { get;  }
 
 		[Export ("data")]
+		[NullAllowed]
 		NSData Data { get;  }
 
 		[Static, Export ("sceneSourceWithURL:options:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
+		[return: NullAllowed]
 		SCNSceneSource FromUrl (NSUrl url, [NullAllowed] NSDictionary options);
 
 		[Wrap ("FromUrl (url, options.GetDictionary ())")]
+		[return: NullAllowed]
 		SCNSceneSource FromUrl (NSUrl url, SCNSceneLoadingOptions options);
 
 		[Static]
 		[Export ("sceneSourceWithData:options:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
+		[return: NullAllowed]
 		SCNSceneSource FromData (NSData data, [NullAllowed] NSDictionary options);
 
 		[Static]
 		[Wrap ("FromData (data, options.GetDictionary ())")]
+		[return: NullAllowed]
 		SCNSceneSource FromData (NSData data, SCNSceneLoadingOptions options);
 
 		[Export ("initWithURL:options:")]
@@ -2812,22 +2844,28 @@ namespace SceneKit {
 		
 		[Export ("sceneWithOptions:statusHandler:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
-		SCNScene SceneFromOptions ([NullAllowed] NSDictionary options, SCNSceneSourceStatusHandler statusHandler);
+		[return: NullAllowed]
+		SCNScene SceneFromOptions ([NullAllowed] NSDictionary options, [NullAllowed] SCNSceneSourceStatusHandler statusHandler);
 
-		[Wrap ("SceneFromOptions (options.GetDictionary (), statusHandler)")]
-		SCNScene SceneFromOptions (SCNSceneLoadingOptions options, SCNSceneSourceStatusHandler statusHandler);
+		[Wrap ("SceneFromOptions (options?.GetDictionary (), statusHandler)")]
+		[return: NullAllowed]
+		SCNScene SceneFromOptions ([NullAllowed] SCNSceneLoadingOptions options, [NullAllowed] SCNSceneSourceStatusHandler statusHandler);
 
 		[Export ("sceneWithOptions:error:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
+		[return: NullAllowed]
 		SCNScene SceneWithOption ([NullAllowed] NSDictionary options, out NSError error);
 
-		[Wrap ("SceneWithOption (options.GetDictionary (), out error)")]
+		[Wrap ("SceneWithOption (options?.GetDictionary (), out error)")]
+		[return: NullAllowed]
 		SCNScene SceneWithOption (SCNSceneLoadingOptions options, out NSError error);
 
 		[Export ("propertyForKey:")]
+		[return: NullAllowed]
 		NSObject GetProperty (NSString key);
 
 		[Export ("entryWithIdentifier:withClass:")]
+		[return: NullAllowed]
 		NSObject GetEntryWithIdentifier (string uid, Class entryClass);
 
 		[Export ("identifiersOfEntriesWithClass:")]
@@ -2869,34 +2907,34 @@ namespace SceneKit {
 		NSString UseSafeModeKey	 { get; }
 
 		[Mac(10,10)]
-		[iOS (8,0)] // header said NA and docs says "Available in iOS 8.0 through iOS 8.2." but it's back on iOS11
+		// header said NA and docs says "Available in iOS 8.0 through iOS 8.2." but it's back on iOS11
 		[TV (11,0), Watch (4,0)]
 		[Field ("SCNSceneSourceConvertUnitsToMetersKey")]
 		NSString ConvertUnitsToMetersKey { get; }
 
 		[Mac(10,10)]
-		[iOS (8,0)] // header said NA and docs says "Available in iOS 8.0 through iOS 8.2." but it's back on iOS11
+		// header said NA and docs says "Available in iOS 8.0 through iOS 8.2." but it's back on iOS11
 		[TV (11,0), Watch (4,0)]
 		[Field ("SCNSceneSourceConvertToYUpKey")]
 		NSString ConvertToYUpKey { get; }
 
-		[Mac(10,10), iOS(8,0)]
+		[Mac(10,10)]
 		[Field ("SCNSceneSourceAnimationImportPolicyKey")]
 		NSString AnimationImportPolicyKey { get; }
 		
-		[Mac(10,10), iOS(8,0)]
+		[Mac(10,10)]
 		[Field ("SCNSceneSourceAnimationImportPolicyPlay")]
 		NSString AnimationImportPolicyPlay { get; }
 		
-		[Mac(10,10), iOS(8,0)]
+		[Mac(10,10)]
 		[Field ("SCNSceneSourceAnimationImportPolicyPlayRepeatedly")]
 		NSString AnimationImportPolicyPlayRepeatedly { get; }
 		
-		[Mac(10,10), iOS(8,0)]
+		[Mac(10,10)]
 		[Field ("SCNSceneSourceAnimationImportPolicyDoNotPlay")]
 		NSString AnimationImportPolicyDoNotPlay { get; }
 		
-		[Mac(10,10), iOS(8,0)]
+		[Mac(10,10)]
 		[Field ("SCNSceneSourceAnimationImportPolicyPlayUsingSceneTimeBase")]
 		NSString AnimationImportPolicyPlayUsingSceneTimeBase { get; }
 
@@ -2979,6 +3017,7 @@ namespace SceneKit {
 
 		[Abstract]
 		[Export ("pointOfView", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNNode PointOfView { get; set;  }
 
 		[Abstract]
@@ -3184,6 +3223,14 @@ namespace SceneKit {
 		[Watch (6,0), TV (13,0), Mac (10,15), iOS (13,0)]
 		[Export ("usesReverseZ")]
 		bool UsesReverseZ { get; set; }
+
+		[NoWatch]
+		[TV (14,0)][Mac (10,11)][iOS (14,0)]
+#if XAMCORE_4_0
+		[Abstract]
+#endif
+		[Export ("currentRenderPassDescriptor")]
+		MTLRenderPassDescriptor CurrentRenderPassDescriptor { get; }
 	}
 
 	[Watch (3,0)]
@@ -3244,6 +3291,7 @@ namespace SceneKit {
 		nfloat ExtrusionDepth { get; set;  }
 
 		[Export ("string", ArgumentSemantic.Copy)]
+		[NullAllowed]
 		NSObject String { get; set;  }
 
 		[Export ("containerFrame")]
@@ -3265,9 +3313,10 @@ namespace SceneKit {
 		nfloat ChamferRadius { get; set;  }
 
 		[Static, Export ("textWithString:extrusionDepth:")]
-		SCNText Create (NSObject str, nfloat extrusionDepth);
+		SCNText Create ([NullAllowed] NSObject str, nfloat extrusionDepth);
 
 		[Export ("font", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		NSFont Font { get; set; }
 
 		[Export ("wrapped")]
@@ -3275,6 +3324,7 @@ namespace SceneKit {
 
 		[Mac (10,9)]
 		[Export ("chamferProfile", ArgumentSemantic.Copy)]
+		[NullAllowed]
 		NSBezierPath ChamferProfile { get; set; }
 
 		[Mac (10,9)]
@@ -3336,7 +3386,7 @@ namespace SceneKit {
 
 		[Static]
 		[Export ("setValue:forKey:")]
-		void SetValueForKey (NSObject value, NSString key);
+		void SetValueForKey ([NullAllowed] NSObject value, NSString key);
 
 		//Detected properties
 		[Static]
@@ -3425,15 +3475,18 @@ namespace SceneKit {
 #if MONOMAC
 		[Deprecated (PlatformName.MacOSX, 10, 14, message: "Please use Metal instead of OpenGL API.")]
 		[Export ("openGLContext", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		NSOpenGLContext	OpenGLContext { get; set;  }
 
 		[Deprecated (PlatformName.MacOSX, 10, 14, message: "Please use Metal instead of OpenGL API.")]
 		[Export ("pixelFormat", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		NSOpenGLPixelFormat PixelFormat { get; set;  }
-#elif !WATCH
+#elif !WATCH && !__MACCATALYST__
 		[Deprecated (PlatformName.iOS, 12, 0, message: "Please use Metal instead of OpenGL API.")]
 		[Deprecated (PlatformName.TvOS, 12, 0, message: "Please use Metal instead of OpenGL API.")]
 		[Export ("eaglContext", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		EAGLContext EAGLContext { get; set; }
 #endif
 
@@ -3458,7 +3511,7 @@ namespace SceneKit {
 		[Export ("stop:")]
 		void Stop ([NullAllowed] NSObject sender);
 
-		[iOS (8,0)][Mac (10,10)]
+		[Mac (10,10)]
 		[Export ("snapshot")]
 		NSImage Snapshot ();
 
@@ -3466,7 +3519,7 @@ namespace SceneKit {
 		[Export ("preferredFramesPerSecond")]
 		nint PreferredFramesPerSecond { get; set; }
 
-		[iOS (8,0)][Mac (10,10)]
+		[Mac (10,10)]
 		[Export ("antialiasingMode")]
 		SCNAntialiasingMode AntialiasingMode { get; set; }
 
@@ -3482,7 +3535,8 @@ namespace SceneKit {
 		[Export ("rendersContinuously")]
 		bool RendersContinuously { get; set; }
 
-		[Watch (6,0), TV (13,0), Mac (10,15), iOS (13,0)]
+		[NoWatch, NoTV, Mac (10,15), NoiOS]
+		[NoMacCatalyst]
 		[Export ("drawableResizesAsynchronously")]
 		bool DrawableResizesAsynchronously { get; set; }
 	}
@@ -3530,14 +3584,14 @@ namespace SceneKit {
 		NSBezierPath ChamferProfile { get; set; }
 
 		[Static, Export ("shapeWithPath:extrusionDepth:")]
-		SCNShape Create (NSBezierPath path, nfloat extrusionDepth);
+		SCNShape Create ([NullAllowed] NSBezierPath path, nfloat extrusionDepth);
 	}
 
 	[Watch (3,0)]
 	[Mac (10,9), iOS (8,0)]
 	[BaseType (typeof (NSObject))]
 	interface SCNMorpher : SCNAnimatable, NSSecureCoding {
-		[NullAllowed] // by default this property is null
+
 		[Export ("targets", ArgumentSemantic.Copy)]
 		SCNGeometry [] Targets { get; set; }
 
@@ -3573,9 +3627,11 @@ namespace SceneKit {
 	[DisableDefaultCtor]
 	interface SCNSkinner : NSSecureCoding {
 		[Export ("skeleton", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNNode Skeleton { get; set; }
 
 		[Export ("baseGeometry", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNGeometry BaseGeometry { get; set; }
 
 		[Mac (10,10)]
@@ -3584,6 +3640,7 @@ namespace SceneKit {
 
 		[Mac (10,10)]
 		[Internal, Export ("boneInverseBindTransforms")]
+		[NullAllowed]
 		NSArray _BoneInverseBindTransforms { get; }
 
 		[Mac (10,10)]
@@ -3600,7 +3657,7 @@ namespace SceneKit {
 
 		[Mac (10,10)]
 		[Static, Internal, Export ("skinnerWithBaseGeometry:bones:boneInverseBindTransforms:boneWeights:boneIndices:")]
-		SCNSkinner _Create (SCNGeometry baseGeometry, SCNNode [] bones, NSArray boneInverseBindTransforms,
+		SCNSkinner _Create ([NullAllowed] SCNGeometry baseGeometry, SCNNode [] bones, [NullAllowed] NSArray boneInverseBindTransforms,
 			SCNGeometrySource boneWeights, SCNGeometrySource boneIndices);
 	}
 
@@ -3614,7 +3671,7 @@ namespace SceneKit {
 		[Export ("influenceFactor")]
 		nfloat InfluenceFactor { get; set; }
 
-		[Mac (10, 10), iOS (8,0)]
+		[Mac (10, 10)]
 		[TV (11,0)][Watch (4,0)]
 		[Export ("enabled")]
 		bool Enabled { [Bind ("isEnabled")] get; set; }
@@ -3707,6 +3764,7 @@ namespace SceneKit {
 	[DisableDefaultCtor]
 	interface SCNLevelOfDetail : NSCopying, NSSecureCoding {
 		[Export ("geometry")]
+		[NullAllowed]
 		SCNGeometry Geometry { get; }
 
 		[Export ("screenSpaceRadius")]
@@ -3767,6 +3825,7 @@ namespace SceneKit {
 
 		[Abstract]
 		[Export ("actionForKey:")]
+		[return: NullAllowed]
 		SCNAction GetAction (string key);
 
 		[Abstract]
@@ -3937,11 +3996,11 @@ namespace SceneKit {
 
 		[Mac (10,9), NoWatch]
 		[Export ("handleBindingOfSymbol:usingBlock:")]
-		void HandleBinding (string symbol, SCNBindingHandler handler);
+		void HandleBinding (string symbol, [NullAllowed] SCNBindingHandler handler);
 
 		[Mac (10,9), NoWatch]
 		[Export ("handleUnbindingOfSymbol:usingBlock:")]
-		void HandleUnbinding (string symbol, SCNBindingHandler handler);
+		void HandleUnbinding (string symbol, [NullAllowed]  SCNBindingHandler handler);
 	}
 
 	[Watch (3,0)]
@@ -3954,9 +4013,11 @@ namespace SceneKit {
 		NSDictionary ToDictionary ();
 
 		[Static, Export ("techniqueWithDictionary:")]
+		[return: NullAllowed]
 		SCNTechnique Create (NSDictionary dictionary);
 
 		[Static, Export ("techniqueBySequencingTechniques:")]
+		[return: NullAllowed]
 		SCNTechnique Create (SCNTechnique [] techniques);
 
 		[NoWatch]
@@ -4057,6 +4118,7 @@ namespace SceneKit {
 		nfloat RollingFriction { get; set; }
 
 		[Export ("physicsShape", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNPhysicsShape PhysicsShape { get; set; }
 
 		[Export ("isResting")]
@@ -4302,7 +4364,7 @@ namespace SceneKit {
 	interface SCNPhysicsShape : NSCopying, NSSecureCoding {
 
 		[Internal, Static, Export ("shapeWithShapes:transforms:")]
-		SCNPhysicsShape Create (SCNPhysicsShape [] shapes, NSValue [] transforms);
+		SCNPhysicsShape Create (SCNPhysicsShape [] shapes, [NullAllowed] NSValue [] transforms);
 
 		[Static, Export ("shapeWithGeometry:options:")]
 		[EditorBrowsable (EditorBrowsableState.Advanced)]
@@ -4438,6 +4500,7 @@ namespace SceneKit {
 		SCNVector3 AnchorA { get; set; }
 
 		[Export ("bodyB")]
+		[NullAllowed]
 		SCNPhysicsBody BodyB { get; }
 
 		[Export ("axisB")]
@@ -4466,6 +4529,7 @@ namespace SceneKit {
 		SCNVector3 AnchorA { get; set; }
 
 		[Export ("bodyB")]
+		[NullAllowed]
 		SCNPhysicsBody BodyB { get; }
 
 		[Export ("anchorB")]
@@ -4495,6 +4559,7 @@ namespace SceneKit {
 		SCNVector3 AnchorA { get; set; }
 
 		[Export ("bodyB")]
+		[NullAllowed]
 		SCNPhysicsBody BodyB { get; }
 
 		[Export ("axisB")]
@@ -4612,6 +4677,7 @@ namespace SceneKit {
 		SCNParticleSystem Create ();
 
 		[Static, Export ("particleSystemNamed:inDirectory:")]
+		[return: NullAllowed]
 		SCNParticleSystem Create (string name, [NullAllowed] string directory);
 
 		[Export ("emissionDuration")]
@@ -4639,6 +4705,7 @@ namespace SceneKit {
 		nfloat WarmupDuration { get; set; }
 
 		[Export ("emitterShape", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNGeometry EmitterShape { get; set; }
 
 		[Export ("birthLocation")]
@@ -4684,15 +4751,19 @@ namespace SceneKit {
 		nfloat ParticleLifeSpanVariation { get; set; }
 
 		[Export ("systemSpawnedOnDying", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNParticleSystem SystemSpawnedOnDying { get; set; }
 
 		[Export ("systemSpawnedOnCollision", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNParticleSystem SystemSpawnedOnCollision { get; set; }
 
 		[Export ("systemSpawnedOnLiving", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		SCNParticleSystem SystemSpawnedOnLiving { get; set; }
 
 		[Export ("particleImage", ArgumentSemantic.Retain)]
+		[NullAllowed]
 		NSObject ParticleImage { get; set; }
 
 		[Export ("imageSequenceColumnCount")]
@@ -4753,6 +4824,7 @@ namespace SceneKit {
 		bool ParticleDiesOnCollision { get; set; }
 
 		[Export ("colliderNodes", ArgumentSemantic.Copy)]
+		[NullAllowed]
 		SCNNode [] ColliderNodes { get; set; }
 
 		[Export ("particleMass")]
@@ -4920,9 +4992,11 @@ namespace SceneKit {
 		nfloat InputBias { get; set; }
 
 		[Export ("inputOrigin", ArgumentSemantic.Weak)]
+		[NullAllowed]
 		SCNNode InputOrigin { get; set; }
 
 		[Export ("inputProperty")]
+		[NullAllowed]
 		NSString InputProperty { get; set; }
 	}
 
@@ -4949,6 +5023,7 @@ namespace SceneKit {
 
 		[Static]
 		[Export ("referenceNodeWithURL:")]
+		[return: NullAllowed]
 		SCNReferenceNode CreateFromUrl (NSUrl referenceUrl);
 
 		[Export ("referenceURL", ArgumentSemantic.Copy)]

@@ -11,6 +11,7 @@ using Microsoft.Build.Utilities;
 using Xamarin.MacDev.Tasks;
 using Xamarin.MacDev;
 using Xamarin.Localization.MSBuild;
+using Xamarin.Utils;
 
 namespace Xamarin.MacDev.Tasks
 {
@@ -227,20 +228,6 @@ namespace Xamarin.MacDev.Tasks
 			var clones = new HashSet<string> ();
 			var items = new List<ITaskItem> ();
 			var specs = new PArray ();
-
-			switch (SdkPlatform) {
-			case "iPhoneSimulator":
-			case "iPhoneOS":
-			case "MacOSX":
-			case "WatchSimulator":
-			case "WatchOS":
-			case "AppleTVSimulator":
-			case "AppleTVOS":
-				break;
-			default:
-				Log.LogError (MSBStrings.E0089, SdkPlatform);
-				return false;
-			}
 
 			if (AppManifest != null) {
 				try {

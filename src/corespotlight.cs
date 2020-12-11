@@ -11,6 +11,7 @@ using System;
 using System.ComponentModel;
 using ObjCRuntime;
 using Foundation;
+using UniformTypeIdentifiers;
 
 namespace CoreSpotlight {
 
@@ -257,8 +258,14 @@ namespace CoreSpotlight {
 	[BaseType (typeof (NSObject))]
 	interface CSSearchableItemAttributeSet : NSCopying, NSSecureCoding {
 
+		[Deprecated (PlatformName.iOS, 14,0, message: "Use '.ctor(UTType)' instead.")]
+		[Deprecated (PlatformName.MacOSX, 11,0, message: "Use '.ctor(UTType)' instead.")]
 		[Export ("initWithItemContentType:")]
 		IntPtr Constructor (string itemContentType);
+
+		[iOS (14,0)][TV (14,0)][Mac (11,0)]
+		[Export ("initWithContentType:")]
+		IntPtr Constructor (UTType contentType);
 
 		// FIXME: Should we keep all the following Categories inline? or should we make them actual [Category] interfaces
 		// There are no methods on any of the following categories, just properties
@@ -1004,36 +1011,36 @@ namespace CoreSpotlight {
 
 		// CSSearchableItemAttributeSet_CSGeneral
 
-		[iOS (11,0), NoTV, Mac (10, 11)]
+		[iOS (11,0), NoTV]
 		[NullAllowed, Export ("userCreated", ArgumentSemantic.Strong)]
 		[Internal] // We would like to use [BindAs (typeof (bool?))]
 		NSNumber _IsUserCreated { [Bind ("isUserCreated")] get; set; }
 
-		[iOS (11, 0), NoTV, Mac (10, 11)]
+		[iOS (11, 0), NoTV]
 		[NullAllowed, Export ("userOwned", ArgumentSemantic.Strong)]
 		[Internal] // We would like to use[BindAs (typeof (bool?))]
 		NSNumber _IsUserOwned { [Bind ("isUserOwned")] get; set; }
 
-		[iOS (11, 0), NoTV, Mac (10, 11)]
+		[iOS (11, 0), NoTV]
 		[NullAllowed, Export ("userCurated", ArgumentSemantic.Strong)]
 		[Internal] // We would like to use [BindAs (typeof (bool?))]
 		NSNumber _IsUserCurated { [Bind ("isUserCurated")] get; set; }
 
-		[iOS (11, 0), NoTV, Mac (10, 11)]
+		[iOS (11, 0), NoTV]
 		[NullAllowed, Export ("rankingHint", ArgumentSemantic.Strong)]
 		NSNumber RankingHint { get; set; }
 
 		// CSSearchableItemAttributeSet_CSItemProvider
 
-		[iOS (11, 0), NoTV, Mac (10, 11)]
+		[iOS (11, 0), NoTV]
 		[NullAllowed, Export ("providerDataTypeIdentifiers", ArgumentSemantic.Copy)]
 		string[] ProviderDataTypeIdentifiers { get; set; }
 
-		[iOS (11, 0), NoTV, Mac (10, 11)]
+		[iOS (11, 0), NoTV]
 		[NullAllowed, Export ("providerFileTypeIdentifiers", ArgumentSemantic.Copy)]
 		string[] ProviderFileTypeIdentifiers { get; set; }
 
-		[iOS (11, 0), NoTV, Mac (10, 11)]
+		[iOS (11, 0), NoTV]
 		[NullAllowed, Export ("providerInPlaceFileTypeIdentifiers", ArgumentSemantic.Copy)]
 		string[] ProviderInPlaceFileTypeIdentifiers { get; set; }
 	}

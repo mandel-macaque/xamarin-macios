@@ -3,17 +3,13 @@ using System.IO;
 using System.Collections.Generic;
 
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
-using Xamarin.MacDev;
 using Xamarin.Localization.MSBuild;
 
 namespace Xamarin.MacDev.Tasks
 {
 	public abstract class CompileEntitlementsTaskBase : XamarinTask
 	{
-		static readonly byte[] XcentMagic = { 0xfa, 0xde, 0x71, 0x71 };
-
 		bool warnedTeamIdentifierPrefix;
 		bool warnedAppIdentifierPrefix;
 
@@ -28,9 +24,10 @@ namespace Xamarin.MacDev.Tasks
 		[Required]
 		public string BundleIdentifier { get; set; }
 
-		[Output]
 		[Required]
 		public ITaskItem CompiledEntitlements { get; set; }
+
+		public bool Debug { get; set; }
 
 		public string Entitlements { get; set; }
 
@@ -40,10 +37,21 @@ namespace Xamarin.MacDev.Tasks
 		public string ProvisioningProfile { get; set; }
 
 		[Required]
+		public string SdkDevPath { get; set; }
+
+		public bool SdkIsSimulator { get; set; }
+
+		[Required]
 		public string SdkPlatform { get; set; }
 
 		[Required]
 		public string SdkVersion { get; set; }
+
+		[Output]
+		public ITaskItem EntitlementsInExecutable { get; set; }
+
+		[Output]
+		public ITaskItem EntitlementsInSignature { get; set; }
 
 		#endregion
 
@@ -302,7 +310,6 @@ namespace Xamarin.MacDev.Tasks
 			PDictionary compiled;
 			PDictionary archived;
 			string path;
-			bool save;
 
 			switch (SdkPlatform) {
 			case "AppleTVSimulator":
@@ -318,8 +325,11 @@ namespace Xamarin.MacDev.Tasks
 			case "MacOSX":
 				platform = MobileProvisionPlatform.MacOS;
 				break;
+			case "MacCatalyst":
+				platform = MobileProvisionPlatform.MacOS;
+				break;
 			default:
-				Log.LogError ("Unknown SDK platform: {0}", SdkPlatform);
+				Log.LogError (MSBStrings.E0048, SdkPlatform);
 				return false;
 			}
 
@@ -361,28 +371,45 @@ namespace Xamarin.MacDev.Tasks
 				return false;
 			}
 
-			path = Path.Combine (EntitlementBundlePath, "archived-expanded-entitlements.xcent");
+			SaveArchivedExpandedEntitlements (archived);
+
+			if (SdkIsSimulator) {
+				if (compiled.Count > 0) {
+					EntitlementsInExecutable = CompiledEntitlements;
+				}
+			} else {
+				EntitlementsInSignature = CompiledEntitlements;
+			}
+
+			return !Log.HasLoggedErrors;
+		}
+
+		bool SaveArchivedExpandedEntitlements (PDictionary archived)
+		{
+			if (Platform == Utils.ApplePlatform.MacCatalyst) {
+				// I'm not sure if we need this in catalyst or not, but skip it until it's proven we actually need it.
+				return true;
+			}
+
+			var path = Path.Combine (EntitlementBundlePath, "archived-expanded-entitlements.xcent");
 
 			if (File.Exists (path)) {
 				var plist = PDictionary.FromFile (path);
 				var src = archived.ToXml ();
 				var dest = plist.ToXml ();
 
-				save = src != dest;
-			} else {
-				save = true;
+				if (src == dest)
+					return true;
 			}
 
-			if (save) {
-				try {
-					archived.Save (path, true);
-				} catch (Exception ex) {
-					Log.LogError (MSBStrings.E0115, ex.Message);
-					return false;
-				}
+			try {
+				archived.Save (path, true);
+			} catch (Exception ex) {
+				Log.LogError (MSBStrings.E0115, ex.Message);
+				return false;
 			}
 
-			return !Log.HasLoggedErrors;
+			return true;
 		}
 	}
 }

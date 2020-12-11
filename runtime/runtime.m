@@ -49,8 +49,10 @@ bool xamarin_init_mono_debug = false;
 #endif
 int xamarin_log_level = 0;
 const char *xamarin_executable_name = NULL;
+#if MONOMAC || TARGET_OS_MACCATALYST
+NSString * xamarin_custom_bundle_name = @"MonoBundle";
+#endif
 #if MONOMAC
-NSString * xamarin_custom_bundle_name = nil;
 bool xamarin_is_mkbundle = false;
 char *xamarin_entry_assembly_path = NULL;
 #endif
@@ -1323,6 +1325,9 @@ xamarin_initialize ()
 
 	runtime_initialize = mono_class_get_method_from_name (runtime_class, "Initialize", 1);
 
+	if (runtime_initialize == NULL)
+		xamarin_assertion_message ("Fatal error: failed to load the %s.%s method", "Runtime", "Initialize");
+
 	options.size = sizeof (options);
 #if MONOTOUCH && (defined(__i386__) || defined (__x86_64__))
 	options.flags = (enum InitializationFlags) (options.flags | InitializationFlagsIsSimulator);
@@ -1378,19 +1383,19 @@ xamarin_get_bundle_path ()
 	NSString *bundle_path;
 	char *result;
 
+	if (main_bundle == NULL)
+		xamarin_assertion_message ("Could not find the main bundle in the app ([NSBundle mainBundle] returned nil)");
+
 #if MONOMAC
 	if (xamarin_launch_mode == XamarinLaunchModeEmbedded) {
 		bundle_path = [[[NSBundle bundleForClass: [XamarinAssociatedObject class]] bundlePath] stringByAppendingPathComponent: @"Versions/Current"];
 	} else {
 		bundle_path = [[main_bundle bundlePath] stringByAppendingPathComponent:@"Contents"];
 	}
-	bundle_path = [bundle_path stringByAppendingPathComponent: xamarin_custom_bundle_name == NULL ? @"MonoBundle" : xamarin_custom_bundle_name];
+	bundle_path = [bundle_path stringByAppendingPathComponent: xamarin_custom_bundle_name];
 #else
 	bundle_path = [main_bundle bundlePath];
 #endif
-
-	if (main_bundle == NULL)
-		xamarin_assertion_message ("Could not find the main bundle in the app ([NSBundle mainBundle] returned nil)");
 
 	result = mono_path_resolve_symlinks ([bundle_path UTF8String]);
 
@@ -2632,6 +2637,14 @@ xamarin_locate_assembly_resource (const char *assembly_name, const char *culture
 			return true;
 		}
 	}
+
+#if TARGET_OS_MACCATALYST
+	snprintf (root, sizeof (root), "%s/Contents/%s", app_path, [xamarin_custom_bundle_name UTF8String]);
+	if (xamarin_locate_assembly_resource_for_root (root, culture, resource, path, pathlen)) {
+		LOG_RESOURCELOOKUP (PRODUCT ": Located resource '%s' from macOS content bundle '%s': %s\n", resource, aname, path);
+		return true;
+	}
+#endif
 
 	return false;
 }

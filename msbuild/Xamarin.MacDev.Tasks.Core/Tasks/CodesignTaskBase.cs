@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Linq;
-using System.Diagnostics;
 
 using Parallel = System.Threading.Tasks.Parallel;
 using ParallelOptions = System.Threading.Tasks.ParallelOptions;
@@ -22,6 +20,8 @@ namespace Xamarin.MacDev.Tasks
 		string toolExe;
 
 		#region Inputs
+
+		public string StampPath { get; set; }
 
 		[Required]
 		public string CodesignAllocate { get; set; }
@@ -74,21 +74,30 @@ namespace Xamarin.MacDev.Tasks
 			return File.Exists (path) ? path : ToolExe;
 		}
 
-		ProcessStartInfo GetProcessStartInfo (string tool, string args)
+		string GetOutputPath (ITaskItem item)
 		{
-			var startInfo = new ProcessStartInfo (tool, args);
-
-			startInfo.WorkingDirectory = Environment.CurrentDirectory;
-			startInfo.EnvironmentVariables["CODESIGN_ALLOCATE"] = CodesignAllocate;
-
-			startInfo.CreateNoWindow = true;
-
-			return startInfo;
+			return Path.Combine (StampPath, item.ItemSpec);
 		}
 
-		string GenerateCommandLineArguments (ITaskItem item)
+		bool NeedsCodesign (ITaskItem item)
 		{
-			var args = new CommandLineArgumentBuilder ();
+			if (string.IsNullOrEmpty (StampPath))
+				return true;
+
+			var output = GetOutputPath (item);
+
+			if (!File.Exists (output))
+				return true;
+
+			if (File.GetLastWriteTimeUtc (item.ItemSpec) >= File.GetLastWriteTimeUtc (output))
+				return true;
+
+			return false;
+		}
+
+		IList<string> GenerateCommandLineArguments (ITaskItem item)
+		{
+			var args = new List<string> ();
 
 			args.Add ("-v");
 			args.Add ("--force");
@@ -96,8 +105,10 @@ namespace Xamarin.MacDev.Tasks
 			if (IsAppExtension)
 				args.Add ("--deep");
 
-			if (UseHardenedRuntime)
-				args.Add ("-o runtime");
+			if (UseHardenedRuntime) {
+				args.Add ("-o");
+				args.Add ("runtime");
+			}
 
 			if (UseSecureTimestamp)
 				args.Add ("--timestamp");
@@ -105,21 +116,21 @@ namespace Xamarin.MacDev.Tasks
 				args.Add ("--timestamp=none");
 
 			args.Add ("--sign");
-			args.AddQuoted (SigningKey);
+			args.Add (SigningKey);
 
 			if (!string.IsNullOrEmpty (Keychain)) {
 				args.Add ("--keychain");
-				args.AddQuoted (Path.GetFullPath (Keychain));
+				args.Add (Path.GetFullPath (Keychain));
 			}
 
 			if (!string.IsNullOrEmpty (ResourceRules)) {
 				args.Add ("--resource-rules");
-				args.AddQuoted (Path.GetFullPath (ResourceRules));
+				args.Add (Path.GetFullPath (ResourceRules));
 			}
 
 			if (!string.IsNullOrEmpty (Entitlements)) {
 				args.Add ("--entitlements");
-				args.AddQuoted (Path.GetFullPath (Entitlements));
+				args.Add (Path.GetFullPath (Entitlements));
 			}
 
 			if (DisableTimestamp)
@@ -128,45 +139,35 @@ namespace Xamarin.MacDev.Tasks
 			if (!string.IsNullOrEmpty (ExtraArgs))
 				args.Add (ExtraArgs);
 
-			args.AddQuoted (Path.GetFullPath (item.ItemSpec));
+			args.Add (Path.GetFullPath (item.ItemSpec));
 
-			return args.ToString ();
+			return args;
 		}
 
 		void Codesign (ITaskItem item)
 		{
-			var startInfo = GetProcessStartInfo (GetFullPathToTool (), GenerateCommandLineArguments (item));
-			var messages = new StringBuilder ();
-			var errors = new StringBuilder ();
-			int exitCode;
-
-			try {
-				Log.LogMessage (MessageImportance.Normal, MSBStrings.M0001, startInfo.FileName, startInfo.Arguments);
-
-				using (var stdout = new StringWriter (messages)) {
-					using (var stderr = new StringWriter (errors)) {
-						using (var process = ProcessUtils.StartProcess (startInfo, stdout, stderr)) {
-							process.Wait ();
-
-							exitCode = process.Result;
-						}
-					}
-
-					Log.LogMessage (MessageImportance.Low, MSBStrings.M0002, startInfo.FileName, exitCode);
-				}
-			} catch (Exception ex) {
-				Log.LogError (MSBStrings.E0003, startInfo.FileName, ex.Message);
-				return;
-			}
-
+			var fileName = GetFullPathToTool ();
+			var arguments = GenerateCommandLineArguments (item);
+			var environment = new Dictionary<string, string> () {
+				{ "CODESIGN_ALLOCATE", CodesignAllocate },
+			};
+			var rv = ExecuteAsync (fileName, arguments, null, environment, mergeOutput: false).Result;
+			var exitCode = rv.ExitCode;
+			var messages = rv.StandardOutput.ToString ();
+			
 			if (messages.Length > 0)
 				Log.LogMessage (MessageImportance.Normal, "{0}", messages.ToString ());
 
 			if (exitCode != 0) {
+				var errors = rv.StandardError.ToString ();
 				if (errors.Length > 0)
-					Log.LogError (null, null, null, item.ItemSpec, 0, 0, 0, 0, "{0}", errors);
+					Log.LogError (MSBStrings.E0004, item.ItemSpec, errors);
 				else
-					Log.LogError (null, null, null, item.ItemSpec, 0, 0, 0, 0, MSBStrings.E0098, startInfo.FileName);
+					Log.LogError (MSBStrings.E0005, item.ItemSpec);
+			} else if (!string.IsNullOrEmpty (StampPath)) {
+				var outputPath = GetOutputPath (item);
+				Directory.CreateDirectory (Path.GetDirectoryName (outputPath));
+				File.WriteAllText (outputPath, string.Empty);
 			}
 		}
 
@@ -176,8 +177,9 @@ namespace Xamarin.MacDev.Tasks
 				return true;
 
 			var codesignedFiles = new List<ITaskItem> ();
+			var resourcesToSign = Resources.Where (v => NeedsCodesign (v));
 
-			Parallel.ForEach (Resources, new ParallelOptions { MaxDegreeOfParallelism = Math.Max (Environment.ProcessorCount / 2, 1) }, (item) => {
+			Parallel.ForEach (resourcesToSign, new ParallelOptions { MaxDegreeOfParallelism = Math.Max (Environment.ProcessorCount / 2, 1) }, (item) => {
 				Codesign (item);
 
 				var files = GetCodesignedFiles (item);

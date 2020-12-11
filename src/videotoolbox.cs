@@ -188,6 +188,19 @@ namespace VideoToolbox {
 		[Mac (10,15), iOS (13,0), TV (13,0)]
 		[Field ("kVTCompressionPropertyKey_UsingGPURegistryID")]
 		NSString UsingGpuRegistryId { get; }
+
+		[Watch (7, 0), TV (14, 0), Mac (11, 0), iOS (14, 0)]
+		[Field ("kVTCompressionPropertyKey_HDRMetadataInsertionMode")]
+		NSString HdrMetadataInsertionMode { get; }
+
+		[TV (14, 0), Mac (11, 0), iOS (14, 0)]
+		[Field ("kVTCompressionPropertyKey_PrioritizeEncodingSpeedOverQuality")]
+		NSString PrioritizeEncodingSpeedOverQuality { get; }
+
+		[iOS (14,1)]
+		[TV (14,2)][Mac (11,0)]
+		[Field ("kVTCompressionPropertyKey_PreserveDynamicHDRMetadata")]
+		NSString PreserveDynamicHdrMetadata { get; }
 	}
 
 	[Mac (10,15), iOS (13,0), TV (13,0)]
@@ -317,6 +330,11 @@ namespace VideoToolbox {
 		[Mac (10,15), iOS (13,0), TV (13,0)]
 		[Export ("UsingGpuRegistryId")]
 		uint UsingGpuRegistryId { get; }
+
+		[iOS (14,1)]
+		[TV (14,2)][Mac (11,0)]
+		[Export ("PreserveDynamicHdrMetadata")]
+		bool PreserveDynamicHdrMetadata { get; set; }
 	}
 
 	[iOS (8,0), TV (10,2)]
@@ -704,6 +722,11 @@ namespace VideoToolbox {
 
 		[Field ("kVTDecompressionPropertyKey_PixelTransferProperties")]
 		NSString PixelTransferProperties { get; }
+
+		[iOS (14,1)]
+		[TV (14,2)][Mac (11,0)]
+		[Field ("kVTDecompressionPropertyKey_PropagatePerFrameHDRDisplayMetadata")]
+		NSString PropagatePerFrameHdrDisplayMetadata { get; }
 	}
 
 	[iOS (8,0), TV (10,2)]
@@ -785,6 +808,11 @@ namespace VideoToolbox {
 		[Mac (10,15), iOS (13,0), TV (13,0)]
 		[Export ("UsingGpuRegistryId")]
 		uint UsingGpuRegistryId { get; }
+
+		[iOS (14,1)]
+		[TV (14,2)][Mac (11,0)]
+		[Export ("PropagatePerFrameHdrDisplayMetadata")]
+		bool PropagatePerFrameHhrDisplayMetadata { get; set; }
 	}
 
 	[Mac (10,9), iOS (8,0), TV (10,2)]
@@ -954,6 +982,13 @@ namespace VideoToolbox {
 		[Mac (10,14,6), iOS (13,0), TV (13,0)]
 		[Field ("kVTVideoEncoderList_IsHardwareAccelerated")]
 		NSString IsHardwareAccelerated { get; }
+
+		[iOS (14,2)][TV (14,2)][Mac (11,0)]
+		[Field ("kVTVideoEncoderList_SupportsFrameReordering")]
+		NSString SupportsFrameReordering { get; }
+
+		// VTVideoEncoder.cs should be updated when new constants are added here
+		// some are missing https://github.com/xamarin/xamarin-macios/issues/9904
 	}
 
 	// VTMultiPassStorage.h

@@ -443,12 +443,6 @@ namespace Xamarin.Localization.MSBuild {
             }
         }
         
-        public static string E0088 {
-            get {
-                return ResourceManager.GetString("E0088", resourceCulture);
-            }
-        }
-        
         public static string E0089 {
             get {
                 return ResourceManager.GetString("E0089", resourceCulture);
@@ -947,6 +941,18 @@ namespace Xamarin.Localization.MSBuild {
             }
         }
         
+        public static string E0174 {
+            get {
+                return ResourceManager.GetString("E0174", resourceCulture);
+            }
+        }
+        
+        public static string E0175 {
+            get {
+                return ResourceManager.GetString("E0175", resourceCulture);
+            }
+        }
+        
         public static string E7001 {
             get {
                 return ResourceManager.GetString("E7001", resourceCulture);
@@ -1004,42 +1010,6 @@ namespace Xamarin.Localization.MSBuild {
         public static string E7010 {
             get {
                 return ResourceManager.GetString("E7010", resourceCulture);
-            }
-        }
-        
-        public static string E7011 {
-            get {
-                return ResourceManager.GetString("E7011", resourceCulture);
-            }
-        }
-        
-        public static string E7012 {
-            get {
-                return ResourceManager.GetString("E7012", resourceCulture);
-            }
-        }
-        
-        public static string E7012_A {
-            get {
-                return ResourceManager.GetString("E7012_A", resourceCulture);
-            }
-        }
-        
-        public static string E7013 {
-            get {
-                return ResourceManager.GetString("E7013", resourceCulture);
-            }
-        }
-        
-        public static string E7013_A {
-            get {
-                return ResourceManager.GetString("E7013_A", resourceCulture);
-            }
-        }
-        
-        public static string E7013_B {
-            get {
-                return ResourceManager.GetString("E7013_B", resourceCulture);
             }
         }
         
@@ -1388,6 +1358,18 @@ namespace Xamarin.Localization.MSBuild {
         public static string E7068 {
             get {
                 return ResourceManager.GetString("E7068", resourceCulture);
+            }
+        }
+        
+        public static string E7069 {
+            get {
+                return ResourceManager.GetString("E7069", resourceCulture);
+            }
+        }
+        
+        public static string E7070 {
+            get {
+                return ResourceManager.GetString("E7070", resourceCulture);
             }
         }
     }

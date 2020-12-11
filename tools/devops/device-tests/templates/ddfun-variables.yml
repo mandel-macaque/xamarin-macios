@@ -2,8 +2,5 @@ variables:
 - name: iOSDevicePool
   value: 'VSEng-Xamarin-Mac-Devices'
 
-- name: WindowsDevicePool
-  value: 'windows-2019'
-
 - name: useXamarinStorage
   value: ${{ false }} # ddfun does not have access to xamarin-storage

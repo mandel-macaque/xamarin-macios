@@ -96,6 +96,27 @@ namespace Introspection {
 				// Xcode 11
 				case "NSFileProviderSearchQuery":
 					return true;
+				// Xcode 12
+				case "ACAccountType":
+				case "ASAccountAuthenticationModificationExtensionContext":
+				case "ASCredentialProviderExtensionContext":
+				case "AVAssetDownloadUrlSession":
+				case "NSFileProviderDomain": // Conformance not in headers
+				case "NSUrlSession":
+				case "SNClassification":
+				case "SNClassificationResult":
+					return true;
+				// PassKit now available on macOS 11+
+				case "PKPaymentMethod":
+				case "PKPaymentMerchantSession":
+				case "PKPaymentSummaryItem":
+				case "PKShareablePassMetadata":
+				case "PKShippingMethod":
+				case "PKSuicaPassProperties": // Conformance not in headers
+				case "PKTransitPassProperties": // Conformance not in headers
+				// Xcode 12.2
+				case "VSAccountApplicationProvider": // Conformance not in headers
+					return true;
 				}
 				break;
 			case "NSMutableCopying":
@@ -108,6 +129,9 @@ namespace Introspection {
 				case "UNNotificationSound":
 				// Xcode 11 - Conformance not in headers
 				case "UISceneSession":
+					return true;
+				// xocde 12 beta 1
+				case "NSUrlSessionConfiguration":
 					return true;
 				}
 				break;
@@ -161,6 +185,49 @@ namespace Introspection {
 				// Xcode 11.4, not documented
 				case "NSHttpCookie":
 					return true;
+				// Xcode 12 beta 1
+				case "ASAccountAuthenticationModificationExtensionContext":
+				case "ASCredentialProviderExtensionContext":
+				case "GCController":
+				case "GCExtendedGamepad":
+				case "GCMicroGamepad":
+				case "GCMotion":
+				case "INFile":
+				case "SNClassification":
+				case "SNClassificationResult":
+					return true;
+				// PassKit now available on macOS 11+
+				case "PKPayment":
+				case "PKPaymentSummaryItem":
+				case "PKShippingMethod":
+				case "PKPaymentRequest":
+				case "PKPaymentToken":
+				case "PKLabeledValue":
+				case "PKPaymentAuthorizationResult":
+				case "PKPaymentRequestShippingMethodUpdate":
+				case "PKPaymentRequestUpdate":
+				case "PKPaymentRequestPaymentMethodUpdate":
+				case "PKPaymentRequestShippingContactUpdate":
+				case "PKSuicaPassProperties": // Conformance not in headers
+				case "PKTransitPassProperties": // Conformance not in headers
+				case "PKDisbursementRequest":
+				case "PKDisbursementVoucher":
+				case "PKAddCarKeyPassConfiguration":
+				case "PKAddSecureElementPassConfiguration":
+				case "PKAddShareablePassConfiguration":
+				case "PKBarcodeEventConfigurationRequest":
+				case "PKBarcodeEventMetadataRequest":
+				case "PKBarcodeEventMetadataResponse":
+				case "PKBarcodeEventSignatureRequest":
+				case "PKBarcodeEventSignatureResponse":
+				case "PKIssuerProvisioningExtensionPaymentPassEntry":
+				case "PKIssuerProvisioningExtensionStatus":
+				case "PKPaymentMerchantSession":
+				case "PKPaymentRequestMerchantSessionUpdate":
+				case "PKShareablePassMetadata":
+				// Xcode 12.2
+				case "VSAccountApplicationProvider": // Conformance not in headers
+					return true;
 				}
 				break;
 			case "NSSecureCoding":
@@ -213,6 +280,8 @@ namespace Introspection {
 				case "ICNotification":
 				case "ICNotificationManagerConfiguration":
 				case "MPSNNNeuronDescriptor":
+				case "MPSNDArrayAllocator": // Conformance in header, but fails at runtime.
+				case "MPSNNLossCallback": // Conformance in header, but fails at runtime.
 					return true;
 				// Xcode 11
 				case "NSFileProviderItemVersion":
@@ -222,6 +291,49 @@ namespace Introspection {
 					return true;
 				// Xcode 11.4, not documented
 				case "NSHttpCookie":
+					return true;
+				// Xcode 12
+				case "ASAccountAuthenticationModificationExtensionContext":
+				case "ASCredentialProviderExtensionContext":
+				case "GCController":
+				case "GCExtendedGamepad":
+				case "GCMicroGamepad":
+				case "GCMotion":
+				case "SNClassification":
+				case "SNClassificationResult":
+				case "CPMessageListItem": // Conformance not in headers
+					return true;
+				// PassKit now available on macOS 11+
+				case "PKPayment":
+				case "PKPaymentSummaryItem":
+				case "PKShippingMethod":
+				case "PKPaymentRequest":
+				case "PKPaymentToken":
+				case "PKLabeledValue":
+				case "PKPaymentAuthorizationResult":
+				case "PKPaymentRequestShippingMethodUpdate":
+				case "PKPaymentRequestUpdate":
+				case "PKPaymentRequestPaymentMethodUpdate":
+				case "PKPaymentRequestShippingContactUpdate":
+				case "PKSuicaPassProperties": // Conformance not in headers
+				case "PKTransitPassProperties": // Conformance not in headers
+				case "PKDisbursementRequest":
+				case "PKDisbursementVoucher":
+				case "PKAddCarKeyPassConfiguration":
+				case "PKAddSecureElementPassConfiguration":
+				case "PKAddShareablePassConfiguration":
+				case "PKBarcodeEventConfigurationRequest":
+				case "PKBarcodeEventMetadataRequest":
+				case "PKBarcodeEventMetadataResponse":
+				case "PKBarcodeEventSignatureRequest":
+				case "PKBarcodeEventSignatureResponse":
+				case "PKIssuerProvisioningExtensionPaymentPassEntry":
+				case "PKIssuerProvisioningExtensionStatus":
+				case "PKPaymentMerchantSession":
+				case "PKPaymentRequestMerchantSessionUpdate":
+				case "PKShareablePassMetadata":
+				// Xcode 12.2
+				case "VSAccountApplicationProvider": // Conformance not in headers
 					return true;
 				}
 				break;
@@ -376,6 +488,32 @@ namespace Introspection {
 				if (result) {
 					// check that +supportsSecureCoding returns YES
 					if (!supports) {
+#if __IOS__
+						// broken in xcode 12 beta 1 simulator (only)
+						if ((Runtime.Arch == Arch.SIMULATOR) && TestRuntime.CheckXcodeVersion (12,0)) {
+							switch (type.Name) {
+							case "ARFaceGeometry":
+							case "ARPlaneGeometry":
+							case "ARPointCloud":
+							case "ARAnchor":
+							case "ARBodyAnchor":
+							case "AREnvironmentProbeAnchor":
+							case "ARFaceAnchor":
+							case "ARGeoAnchor":
+							case "ARGeometryElement":
+							case "ARGeometrySource":
+							case "ARImageAnchor":
+							case "ARMeshAnchor":
+							case "ARMeshGeometry":
+							case "ARObjectAnchor":
+							case "ARParticipantAnchor":
+							case "ARPlaneAnchor":
+							case "ARReferenceObject":
+							case "ARWorldMap":
+								return;
+							}
+						}
+#endif
 						ReportError ("{0} conforms to NSSecureCoding but SupportsSecureCoding returned false", type.Name);
 					}
 				} else if (type.IsPublic && supports) {

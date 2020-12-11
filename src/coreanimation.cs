@@ -37,9 +37,11 @@ using AppKit;
 using CoreVideo;
 using OpenGL;
 #else
-using OpenGLES;
 using UIKit;
 using CAEdrMetadata = Foundation.NSObject;
+#endif
+#if HAS_OPENGLES
+using OpenGLES;
 #endif
 using Foundation;
 using CoreImage;
@@ -621,9 +623,6 @@ namespace CoreAnimation {
 		[Export ("drawableSize")]
 		CGSize DrawableSize { get; set; }
 
-		[Export ("newDrawable")]
-		ICAMetalDrawable CreateDrawable ();
-
 		[Export ("nextDrawable")]
 		ICAMetalDrawable NextDrawable ();
 		
@@ -967,7 +966,7 @@ namespace CoreAnimation {
 		NSObject ActionForLayer (CALayer layer, string eventKey);
 	}
 	
-#if !MONOMAC
+#if HAS_OPENGLES
 	[Deprecated (PlatformName.TvOS, 12, 0, message: "Use 'CAMetalLayer' instead.")]
 	[Deprecated (PlatformName.WatchOS, 5, 0, message: "Use 'CAMetalLayer' instead.")]
 	[Deprecated (PlatformName.iOS, 12, 0, message: "Use 'CAMetalLayer' instead.")]
@@ -1745,7 +1744,7 @@ namespace CoreAnimation {
 
 // Corresponding headers were removed in Xcode 9 without any explanation
 // rdar #33590997 was filled - no news
-// 'initWithType:' and 'behaviorWithType:' API now cause rejection
+// 'initWithType:', 'behaviorWithType:' and 'behaviorTypes' API now cause rejection
 // https://trello.com/c/J8BDDUV9/86-33590997-coreanimation-quartzcore-api-removals
 #if !XAMCORE_4_0
 	[iOS (7,0), Mac (10, 9)]
@@ -1764,9 +1763,6 @@ namespace CoreAnimation {
 
 		[Export ("type")]
 		string Type { get; }
-
-		[Static][Export ("behaviorTypes")]
-		NSString[] BehaviorTypes { get; }
 
 		// [Static][Export ("behaviorWithType:")]
 		// CAEmitterBehavior Create (NSString type);

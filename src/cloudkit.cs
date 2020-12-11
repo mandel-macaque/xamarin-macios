@@ -199,8 +199,6 @@ namespace CloudKit {
 	interface CKContainer {
 
 		[NoWatch]
-		[iOS (8, 0)]
-		[Mac (10, 10)]
 		[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'CurrentUserDefaultName' instead.")]
 		[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'CurrentUserDefaultName' instead.")]
 		[Field ("CKOwnerDefaultName")]
@@ -260,16 +258,6 @@ namespace CloudKit {
 		[Async]
 		void DiscoverAllIdentities (Action<CKUserIdentity[], NSError> completionHandler);
 		
-		[iOS (8, 0)]
-		[Mac (10, 10)]
-		[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'DiscoverAllIdentities' instead.")]
-		[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'DiscoverAllIdentities' instead.")]
-		[NoWatch]
-		[NoTV]
-		[Export ("discoverAllContactUserInfosWithCompletionHandler:")]
-		[Async]
-		void DiscoverAllContactUserInfos (Action<CKDiscoveredUserInfo[], NSError> completionHandler);
-
 		[iOS (10,0), TV (10,0), Mac (10,12)]
 		[Export ("discoverUserIdentityWithEmailAddress:completionHandler:")]
 		[Async]
@@ -280,29 +268,11 @@ namespace CloudKit {
 		[Async]
 		void DiscoverUserIdentityWithPhoneNumber (string phoneNumber, Action<CKUserIdentity, NSError> completionHandler);
 		
-		[iOS (8, 0)]
-		[Mac (10, 10)]
-		[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'DiscoverUserIdentityWithEmailAddress' instead.")]
-		[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'DiscoverUserIdentityWithEmailAddress' instead.")]
-		[NoWatch]
-		[Export ("discoverUserInfoWithEmailAddress:completionHandler:")]
-		[Async]
-		void DiscoverUserInfo (string email, Action<CKDiscoveredUserInfo, NSError> completionHandler);
-
 		[iOS (10,0), TV (10,0), Mac (10,12)]
 		[Export ("discoverUserIdentityWithUserRecordID:completionHandler:")]
 		[Async]
 		void DiscoverUserIdentity (CKRecordID userRecordID, Action<CKUserIdentity, NSError> completionHandler);
 	
-		[iOS (8, 0)]
-		[Mac (10, 10)]
-		[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'DiscoverUserIdentity' instead.")]
-		[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'DiscoverUserIdentity' instead.")]
-		[NoWatch]
-		[Export ("discoverUserInfoWithUserRecordID:completionHandler:")]
-		[Async]
-		void DiscoverUserInfo (CKRecordID userRecordId, Action<CKDiscoveredUserInfo, NSError> completionHandler);
-
 		[iOS (9,0)][Mac (10,11)]
 		[Field ("CKAccountChangedNotification")]
 		[Notification]
@@ -428,7 +398,9 @@ namespace CloudKit {
 
 	[NoWatch]
 	[NoTV]
+	[Obsoleted (PlatformName.iOS, 14, 0, message : "Use 'CKDiscoverAllUserIdentitiesOperation' instead.")]
 	[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'CKDiscoverAllUserIdentitiesOperation' instead.")]
+	[Obsoleted (PlatformName.MacOSX, 10, 16, message : "Use 'CKDiscoverAllUserIdentitiesOperation' instead.")]
 	[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'CKDiscoverAllUserIdentitiesOperation' instead.")]
 	[iOS (8,0), Mac (10,10)]
 	[BaseType (typeof (CKOperation))]
@@ -439,12 +411,11 @@ namespace CloudKit {
 		[Export ("init")]
 		IntPtr Constructor ();
 
-		[NullAllowed] // by default this property is null
-		[Export ("discoverAllContactsCompletionBlock", ArgumentSemantic.Copy)]
-		Action<CKDiscoveredUserInfo[], NSError> DiscoverAllContactsHandler { get; set; }
 	}
 
+	[Obsoleted (PlatformName.iOS, 14, 0, message : "Use 'CKUserIdentity' instead.")]
 	[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'CKUserIdentity' instead.")]
+	[Obsoleted (PlatformName.MacOSX, 10, 16, message : "Use 'CKUserIdentity' instead.")]
 	[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'CKUserIdentity' instead.")]
 	[iOS (8,0), Mac (10,10)]
 	[NoWatch]
@@ -460,63 +431,18 @@ namespace CloudKit {
 		[Export ("userRecordID", ArgumentSemantic.Copy)]
 		CKRecordID UserRecordId { get; }
 
-		[iOS (8, 0)]
-		[Mac (10, 10)]
 		[Deprecated (PlatformName.MacOSX, 10, 11, message : "Use 'DisplayContact.GivenName'.")]
 		[Deprecated (PlatformName.iOS, 9, 0, message : "Use 'DisplayContact.GivenName'.")]
 		[NullAllowed]
 		[Export ("firstName", ArgumentSemantic.Copy)]
 		string FirstName { get; }
 
-		[iOS (8, 0)]
-		[Mac (10, 10)]
 		[Deprecated (PlatformName.MacOSX, 10, 11, message : "Use 'DisplayContact.FamilyName'.")]
 		[Deprecated (PlatformName.iOS, 9, 0, message : "Use 'DisplayContact.FamilyName'.")]
 		[NullAllowed]
 		[Export ("lastName", ArgumentSemantic.Copy)]
 		string LastName { get; }
 
-
-#if MONOMAC || IOS
-		[iOS (9,0)][Mac (10,11)]
-		[NullAllowed, Export ("displayContact", ArgumentSemantic.Copy)]
-		CNContact DisplayContact { get; }
-#endif // MONOMAC || IOS
-	}
-
-	[NoWatch]
-	[iOS (8,0), Mac (10,10)]
-	delegate void CKDiscoverUserInfosCompletionHandler (NSDictionary emailsToUserInfos, NSDictionary userRecordIdsToUserInfos, NSError operationError);
-
-	[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'CKDiscoverUserIdentitiesOperation' instead.")]
-	[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'CKDiscoverUserIdentitiesOperation' instead.")]
-	[iOS (8,0), Mac (10,10)]
-	[NoWatch]
-	[BaseType (typeof (CKOperation))]
-	[DisableDefaultCtor] // designated
-	interface CKDiscoverUserInfosOperation {
-
-		[DesignatedInitializer]
-		[Export ("init")]
-		IntPtr Constructor ();
-
-		[Export ("initWithEmailAddresses:userRecordIDs:")]
-		IntPtr Constructor ([NullAllowed] string [] emailAddresses, [NullAllowed] CKRecordID [] userRecordIDs);
-
-		[NullAllowed] // by default this property is null
-		[Export ("emailAddresses", ArgumentSemantic.Copy)]
-		string [] EmailAddresses { get; set; }
-
-		[NullAllowed] // by default this property is null
-		[Export ("userRecordIDs", ArgumentSemantic.Copy)]
-		CKRecordID [] UserRecordIds { get; set; }
-
-		[NullAllowed] // by default this property is null
-		[Export ("discoverUserInfosCompletionBlock", ArgumentSemantic.Copy)]
-		CKDiscoverUserInfosCompletionHandler Completed {
-			get;
-			set; 
-		}
 	}
 
 	// CKError.h Fields
@@ -1144,6 +1070,10 @@ namespace CloudKit {
 		[Watch (4, 0), NoTV, Mac (10, 13), iOS (11, 0)]
 		[NullAllowed, Export ("subtitleLocalizationArgs", ArgumentSemantic.Copy)]
 		string[] SubtitleLocalizationArgs { get; }
+
+		[Watch (7, 0), TV (14, 0), Mac (10, 16), iOS (14, 0)]
+		[NullAllowed, Export ("subscriptionOwnerUserRecordID", ArgumentSemantic.Copy)]
+		CKRecordID SubscriptionOwnerUserRecordId { get; }
 	}
 
 	[Watch (3,0)]
@@ -1165,14 +1095,7 @@ namespace CloudKit {
 		[NullAllowed, Export ("recordID", ArgumentSemantic.Copy)]
 		CKRecordID RecordId { get; }
 
-		[iOS (8, 0)]
-		[Mac (10, 10)]
-		[Deprecated (PlatformName.iOS, 10, 0, message : "Use 'DatabaseScope' instead.")]
-		[Deprecated (PlatformName.MacOSX, 10, 12, message : "Use 'DatabaseScope' instead.")]
-		[Export ("isPublicDatabase", ArgumentSemantic.UnsafeUnretained)]
-		bool IsPublicDatabase { get; }
-		
-		[iOS (10,0), Watch (3,0), TV (10,0), Mac (10,12)]
+		[iOS (10,0), TV (10,0), Mac (10,12)]
 		[Export ("databaseScope", ArgumentSemantic.Assign)]
 		CKDatabaseScope DatabaseScope { get; }
 	}
@@ -1187,7 +1110,7 @@ namespace CloudKit {
 		[Export ("recordZoneID", ArgumentSemantic.Copy)]
 		CKRecordZoneID RecordZoneId { get; }
 
-		[iOS (10,0), Watch (3,0), TV (10,0), Mac (10,12)]
+		[iOS (10,0), TV (10,0), Mac (10,12)]
 		[Export ("databaseScope", ArgumentSemantic.Assign)]
 		CKDatabaseScope DatabaseScope { get; }
 	}
@@ -1664,18 +1587,6 @@ namespace CloudKit {
 		[Export ("initWithRecordType:predicate:subscriptionID:options:")]
 		IntPtr Constructor (string recordType, NSPredicate predicate, string subscriptionId, CKSubscriptionOptions subscriptionOptions);
 
-		[NoWatch]
-		[Deprecated (PlatformName.iOS, 10,0, message: "Use 'CKRecordZoneSubscription'.")]
-		[Deprecated (PlatformName.MacOSX, 10,12, message: "Use 'CKRecordZoneSubscription'.")]
-		[Export ("initWithZoneID:options:")]
-		IntPtr Constructor (CKRecordZoneID zoneId, CKSubscriptionOptions subscriptionOptions);
-
-		[NoWatch]
-		[Deprecated (PlatformName.iOS, 10,0, message: "Use 'CKRecordZoneSubscription'.")]
-		[Deprecated (PlatformName.MacOSX, 10,12, message: "Use 'CKRecordZoneSubscription'.")]
-		[Export ("initWithZoneID:subscriptionID:options:")]
-		IntPtr Constructor (CKRecordZoneID zoneId, string subscriptionId, CKSubscriptionOptions subscriptionOptions);
-
 		[Export ("subscriptionID")]
 		string SubscriptionId { get; }
 
@@ -1696,13 +1607,7 @@ namespace CloudKit {
 		[Export ("predicate", ArgumentSemantic.Copy)]
 		NSPredicate Predicate { get; }
 
-		[NoWatch]
-		[Deprecated (PlatformName.iOS, 10,0, message: "Use 'CKQuerySubscriptionOptions'.")]
-		[Deprecated (PlatformName.MacOSX, 10,12, message: "Use 'CKQuerySubscriptionOptions'.")]
-		[Export ("subscriptionOptions", ArgumentSemantic.UnsafeUnretained)]
-		CKSubscriptionOptions SubscriptionOptions { get; }
-
-		[TV (10,0), Watch (6,0)]
+		[TV (10,0)]
 		[NullAllowed]
 		[Export ("notificationInfo", ArgumentSemantic.Copy)]
 		CKNotificationInfo NotificationInfo { get; set; }
@@ -1754,7 +1659,6 @@ namespace CloudKit {
 		[Export ("desiredKeys", ArgumentSemantic.Copy)]
 		string [] DesiredKeys { get; set; }
 
-		[TV (10, 0)]
 		[Export ("shouldBadge", ArgumentSemantic.UnsafeUnretained)]
 		bool ShouldBadge { get; set; }
 

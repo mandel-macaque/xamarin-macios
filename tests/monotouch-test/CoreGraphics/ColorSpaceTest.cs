@@ -137,6 +137,9 @@ namespace MonoTouchFixtures.CoreGraphics {
 					Assert.False (cs.SupportsOutput, "SupportsOutput");
 					Assert.Null (cs.GetIccData (), "GetIccData");
 				}
+
+				if (TestRuntime.CheckXcodeVersion (12, 0))
+					Assert.False (cs.UsesExtendedRange, "UsesExtendedRange");
 			}
 		}
 
@@ -154,14 +157,17 @@ namespace MonoTouchFixtures.CoreGraphics {
 				Assert.That (cs.GetColorTable ().Length, Is.EqualTo (0), "GetColorTable");
 
 				using (var icc_profile = cs.GetICCProfile ())
-					Assert.That (icc_profile.Length, Is.EqualTo (3144), "GetICCProfile");
+					Assert.That (icc_profile.Length, Is.EqualTo ((nuint) 3144), "GetICCProfile");
 
 				Assert.That (cs.Name, Is.EqualTo (CGColorSpaceNames.ExtendedSrgb.ToString ()), "Name");
 				Assert.True (cs.IsWideGamutRgb, "IsWideGamutRgb");
 				Assert.True (cs.SupportsOutput, "SupportsOutput");
 
 				using (var icc_data = cs.GetIccData ())
-					Assert.That (icc_data.Length, Is.EqualTo (3144), "GetIccData");
+					Assert.That (icc_data.Length, Is.EqualTo ((nuint)3144), "GetIccData");
+
+				if (TestRuntime.CheckXcodeVersion (12, 0))
+					Assert.True (cs.UsesExtendedRange, "UsesExtendedRange");
 			}
 		}
 
@@ -213,7 +219,7 @@ namespace MonoTouchFixtures.CoreGraphics {
 
 			if (TestRuntime.CheckXcodeVersion (5, 0)) {
 				using (var icc_profile = cs.GetICCProfile ())
-					Assert.That (icc_profile.Length, Is.EqualTo (3284), "GetICCProfile");
+					Assert.That (icc_profile.Length, Is.EqualTo ((nuint) 3284), "GetICCProfile");
 			}
 
 			if (TestRuntime.CheckXcodeVersion (8, 0)) {
@@ -221,7 +227,7 @@ namespace MonoTouchFixtures.CoreGraphics {
 				Assert.False (cs.IsWideGamutRgb, "IsWideGamutRgb");
 				Assert.True (cs.SupportsOutput, "SupportsOutput");
 				using (var icc_data = cs.GetIccData ())
-					Assert.That (icc_data.Length, Is.EqualTo (3284), "GetIccData");
+					Assert.That (icc_data.Length, Is.EqualTo ((nuint) 3284), "GetIccData");
 			}
 		}
 
@@ -391,6 +397,49 @@ namespace MonoTouchFixtures.CoreGraphics {
 				Assert.False (cs.IsHdr, "GenericRgb");
 			using (var cs = CGColorSpace.CreateWithName (CGColorSpaceNames.DisplayP3_Hlg))
 				Assert.True (cs.IsHdr, "DisplayP3_Hlg");
+		}
+
+		[Test]
+		public void CGColorSpaceUsesITUR_2100TFTest ()
+		{
+			TestRuntime.AssertXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch);
+			using (var cs = CGColorSpace.CreateWithName (CGColorSpaceNames.DisplayP3_Hlg))
+				Assert.True (cs.UsesItur2100TF, "DisplayP3_Hlg");
+			using (var cs = CGColorSpace.CreateWithName (CGColorSpaceNames.GenericRgb))
+				Assert.False (cs.UsesItur2100TF, "GenericRgb");
+		}
+
+		[Test]
+		public void CreateLinearizedTest ()
+		{
+			TestRuntime.AssertXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch);
+			using (var cs = CGColorSpace.CreateWithName (CGColorSpaceNames.GenericRgb)) {
+				var csl = cs.CreateLinearized ();
+				Assert.NotNull (csl, "not null");
+				Assert.That ((nint) TestRuntime.CFGetRetainCount (csl.Handle), Is.EqualTo ((nint) 1));
+			}
+		}
+
+		[Test]
+		public void CreateExtendedTest ()
+		{
+			TestRuntime.AssertXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch);
+			using (var cs = CGColorSpace.CreateWithName (CGColorSpaceNames.GenericRgb)) {
+				var csl = cs.CreateExtended ();
+				Assert.NotNull (csl, "not null");
+				Assert.That ((nint) TestRuntime.CFGetRetainCount (csl.Handle), Is.EqualTo ((nint) 1));
+			}
+		}
+
+		[Test]
+		public void CreateExtendedLinearizedTest ()
+		{
+			TestRuntime.AssertXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch);
+			using (var cs = CGColorSpace.CreateWithName (CGColorSpaceNames.GenericRgb)) {
+				var csl = cs.CreateExtendedLinearized ();
+				Assert.NotNull (csl, "not null");
+				Assert.That ((nint) TestRuntime.CFGetRetainCount (csl.Handle), Is.EqualTo ((nint) 1));
+			}
 		}
 	}
 }

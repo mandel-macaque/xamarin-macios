@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.DotNet.XHarness.iOS.Shared;
 using Microsoft.DotNet.XHarness.iOS.Shared.Execution;
 using Microsoft.DotNet.XHarness.iOS.Shared.Utilities;
 using Xharness.Jenkins.TestTasks;
@@ -11,12 +10,12 @@ namespace Xharness.Jenkins {
 	class MacTestTasksEnumerable : IEnumerable<RunTestTask> {
 
 		readonly Jenkins jenkins;
-		readonly IProcessManager processManager;
+		readonly IMlaunchProcessManager processManager;
 		readonly ICrashSnapshotReporterFactory crashReportSnapshotFactory;
 		readonly ITestVariationsFactory testVariationsFactory;
 
-		public MacTestTasksEnumerable (Jenkins jenkins, 
-								    IProcessManager processManager,
+		public MacTestTasksEnumerable (Jenkins jenkins,
+									IMlaunchProcessManager processManager,
 									ICrashSnapshotReporterFactory crashReportSnapshotFactory,
 									ITestVariationsFactory testVariationsFactory)
 		{
@@ -81,8 +80,7 @@ namespace Xharness.Jenkins {
 				foreach (var config in configurations) {
 					MSBuildTask build = new MSBuildTask (jenkins: jenkins, testProject: project, processManager: processManager);
 					build.Platform = platform;
-					build.CloneTestProject (jenkins.MainLog, processManager, project);
-					build.SolutionPath = project.SolutionPath;
+					build.CloneTestProject (jenkins.MainLog, processManager, project, HarnessConfiguration.RootDirectory);
 					build.ProjectConfiguration = config;
 					build.ProjectPlatform = project.Platform;
 					build.SpecifyPlatform = false;

@@ -92,7 +92,7 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 # We'll checkout another hash, which may not have this script, and executing a script that is deleted
 # sounds like a bad idea. So copy the scripts to /tmp and execute it from there
 if test -z "$WORKING_DIR"; then
-	$CP "$ROOT_DIR/tools/compare-commits.sh" "$ROOT_DIR/tools/diff-to-html" "$TMPDIR/"
+	$CP -v "$ROOT_DIR/tools/compare-commits.sh" "$ROOT_DIR/tools/diff-to-html" "$TMPDIR/"
 	exec "$TMPDIR/$(basename "$0")" "${ORIGINAL_ARGS[@]}" "--impl-working-dir=$(pwd)"
 	exit $?
 fi
@@ -180,7 +180,7 @@ mkdir -p "$OUTPUT_DIR/project-files"
 ln -s git "$OUTPUT_DIR/_ios-build/Library/Frameworks/Xamarin.iOS.framework/Versions/Current"
 ln -s git "$OUTPUT_DIR/_mac-build/Library/Frameworks/Xamarin.Mac.framework/Versions/Current"
 
-for dir in 2.1 Xamarin.iOS Xamarin.TVOS Xamarin.WatchOS; do
+for dir in 2.1 Xamarin.iOS Xamarin.TVOS Xamarin.WatchOS Xamarin.MacCatalyst; do
 	$CP -R "$ROOT_DIR/_ios-build/Library/Frameworks/Xamarin.iOS.framework/Versions/git/lib/mono/$dir" "$OUTPUT_DIR/_ios-build/Library/Frameworks/Xamarin.iOS.framework/Versions/git/lib/mono"
 done
 
@@ -202,7 +202,7 @@ git checkout --quiet --force --detach "$BASE_HASH"
 touch "$OUTPUT_DIR/stamp"
 
 echo "${BLUE}Building src/...${CLEAR}"
-if ! make -C "$ROOT_DIR/src" BUILD_DIR="$ROOT_DIR/tools/comparison/build" PROJECT_DIR="$OUTPUT_DIR/project-files" "IOS_DESTDIR=$OUTPUT_DIR/_ios-build" "MAC_DESTDIR=$OUTPUT_DIR/_mac-build" -j8; then
+if ! make -C "$ROOT_DIR/src" BUILD_DIR="$ROOT_DIR/tools/comparison/build" PROJECT_DIR="$OUTPUT_DIR/project-files" "IOS_DESTDIR=$OUTPUT_DIR/_ios-build" "MAC_DESTDIR=$OUTPUT_DIR/_mac-build" "DOTNET_DESTDIR=$OUTPUT_DIR/_build" -j8; then
 	EC=$?
 	report_error_line "${RED}Failed to build src/${CLEAR}"
 	exit "$EC"
@@ -243,17 +243,28 @@ find build build-new '(' \
 	-name 'Constants.cs' -or \
 	-name 'generator.csproj*' -or \
 	-name 'bgen.csproj.*' -or \
+	-name 'PublishOutputs.*.txt' -or \
 	-name '*.cache' \
 	')' -delete
 mkdir -p "$OUTPUT_DIR/generator-diff"
 GENERATOR_DIFF_FILE="$OUTPUT_DIR/generator-diff/index.html"
 git diff --no-index build build-new > "$OUTPUT_DIR/generator-diff/generator.diff" || true
+if ! test -f "$TMPDIR/diff-to-html"; then
+	# Some diagnostics to try to figure out https://github.com/xamarin/maccore/issues/1467.
+	echo "The file $TMPDIR/diff-to-html does not exist!"
+	echo "This script: $0"
+	echo "The arguments: $*"
+	echo "Listing the contents of $TMPDIR:"
+	ls -la "$TMPDIR"
+	exit 1
+fi
 "$TMPDIR/diff-to-html" "$OUTPUT_DIR/generator-diff/generator.diff" "$GENERATOR_DIFF_FILE"
 
 # Check if any files in the normal output paths were modified (there should be none)
 MODIFIED_FILES=$(find \
 	"$ROOT_DIR/_ios-build" \
 	"$ROOT_DIR/_mac-build" \
+	"$ROOT_DIR/_build" \
 	"$ROOT_DIR/src" \
 	"$ROOT_DIR/tools/apidiff" \
 	-type f \

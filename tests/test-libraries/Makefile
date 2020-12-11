@@ -62,7 +62,7 @@ EXTRA_DEPENDENCIES = libtest.h $(GENERATED_FILES) rename.h
 
 .libs/$(1)/libtest%.a: .libs/$(1)/libtest%.o libtest-object.m libtest-ar.m
 	$(Q) rm -f $$@
-	$$(call Q_2,AR     [$(1)]) $(XCODE_DEVELOPER_ROOT)/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar cru $$@ $$^
+	$$(call Q_2,AR     [$(1)]) $(XCODE_DEVELOPER_ROOT)/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar cru $$@ $$<
 
 .libs/$(1)/libtest.a: $$(foreach arch,$(3),.libs/$(1)/libtest.$$(arch).a)
 	$(Q) rm -f $$@
@@ -124,7 +124,7 @@ $(eval $(call Template,tvsimulator,TVSIMULATOR,x86_64,AppleTVSimulator,-mtvos-si
 $(eval $(call Template,tvos,TVOS,arm64,AppleTVOS,-mtvos-version-min=9.0 -fembed-bitcode,TVOS))
 endif
 ifdef INCLUDE_WATCH
-$(eval $(call Template,watchsimulator,WATCHSIMULATOR,x86,WatchSimulator,-mwatchos-simulator-version-min=2.0,WATCHOS))
+$(eval $(call Template,watchsimulator,WATCHSIMULATOR,x86 x86_64,WatchSimulator,-mwatchos-simulator-version-min=2.0,WATCHOS))
 $(eval $(call Template,watchos,WATCHOS,armv7k arm64_32,WatchOS,-mwatchos-version-min=2.0 -fembed-bitcode,WATCHOS))
 endif
 ifdef INCLUDE_MAC
@@ -190,6 +190,22 @@ endef
 $(eval $(call FatFrameworkTemplate,ios-fat,iphoneos,iphonesimulator))
 $(eval $(call FatFrameworkTemplate,tvos-fat,tvos,tvsimulator))
 $(eval $(call FatFrameworkTemplate,watchos-fat,watchos,watchsimulator))
+
+XCPLATFORMS=iphoneos iphonesimulator tvos tvsimulator watchos watchsimulator
+ifdef INCLUDE_MAC
+XCPLATFORMS+= macos
+endif
+
+XTEST_XCFRAMEWORKS += $(foreach platform,$(XCPLATFORMS),.libs/$(platform)/XTest.framework)
+XTEST_XCTARGETS += \
+	$(foreach platform,$(XCPLATFORMS),.libs/$(platform)/XTest.framework/XTest) \
+	$(foreach platform,$(XCPLATFORMS),.libs/$(platform)/XTest.framework/Info.plist) \
+
+.libs/XTest.xcframework: $(XTEST_XCTARGETS) Makefile
+	$(Q) rm -rf $@
+	$(Q_GEN) $(XCODE_DEVELOPER_ROOT)/usr/bin/xcodebuild -quiet -create-xcframework $(foreach fw,$(XTEST_XCFRAMEWORKS),-framework $(fw)) -output $@
+
+all-local:: .libs/XTest.xcframework
 
 # Xamarin.Mac
 

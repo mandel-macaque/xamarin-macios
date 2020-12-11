@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Mono.Cecil;
 
 using Xamarin.Bundler;
+using Registrar;
 #endif
 
 using Xamarin.Utils;
@@ -16,6 +17,7 @@ public class Framework
 	public Version Version;
 	public Version VersionAvailableInSimulator;
 	public bool AlwaysWeakLinked;
+	public bool Unavailable;
 
 #if MTOUCH || MMP || BUNDLER
 	public bool IsFrameworkAvailableInSimulator (Application app)
@@ -92,12 +94,15 @@ public class Frameworks : Dictionary <string, Framework>
 				mac_frameworks = new Frameworks () {
 					{ "Accelerate", 10, 0 },
 					{ "AppKit", 10, 0 },
+					{ "CoreFoundation", "CoreFoundation", 10, 0 },
 					{ "CoreGraphics", "QuartzCore", 10, 0 },
 					{ "CoreImage", "QuartzCore", 10, 0 },
 					{ "Foundation", 10, 0 },
 					{ "ImageKit", "Quartz", 10, 0 },
 					{ "PdfKit", "Quartz", 10, 0 },
 					{ "Security", 10, 0 },
+
+					{ "GSS", "GSS", 10, 1 },
 
 					{ "AudioUnit", 10, 2 },
 					{ "CoreMidi", "CoreMIDI", 10, 2 },
@@ -207,6 +212,18 @@ public class Frameworks : Dictionary <string, Framework>
 					//{ "CoreHaptics", "CoreHaptics", 10,15 },
 
 					{ "AutomaticAssessmentConfiguration", "AutomaticAssessmentConfiguration", 10,15,4 },
+
+					{ "Accessibility", "Accessibility", 11,0 },
+					{ "AppTrackingTransparency", "AppTrackingTransparency", 11,0 },
+					{ "CallKit", "CallKit", 11,0 },
+					{ "ClassKit", "ClassKit", 11,0 },
+					{ "MLCompute", "MLCompute", 11,0 },
+					{ "OSLog", "OSLog", 11,0 },
+					{ "PassKit", "PassKit", 11,0 },
+					{ "ReplayKit", "ReplayKit", 11,0 },
+					{ "ScreenTime", "ScreenTime", 11,0 },
+					{ "UniformTypeIdentifiers", "UniformTypeIdentifiers", 11,0 },
+					{ "UserNotificationsUI", "UserNotificationsUI", 11,0 },
 				};
 			}
 			return mac_frameworks;
@@ -216,8 +233,14 @@ public class Frameworks : Dictionary <string, Framework>
 	static Frameworks ios_frameworks;
 	public static Frameworks GetiOSFrameworks (bool is_simulator_build)
 	{
-		if (ios_frameworks == null) {
-			ios_frameworks = new Frameworks () {
+		if (ios_frameworks == null)
+			ios_frameworks = CreateiOSFrameworks (is_simulator_build);
+		return ios_frameworks;
+	}
+
+	public static Frameworks CreateiOSFrameworks (bool is_simulator_build)
+	{
+		return new Frameworks () {
 				{ "AddressBook",  "AddressBook", 3 },
 				{ "Security", "Security", 3 },
 				{ "AudioUnit", "AudioToolbox", 3 },
@@ -227,6 +250,7 @@ public class Frameworks : Dictionary <string, Framework>
 				{ "CFNetwork", "CFNetwork", 3 },
 				{ "CoreAnimation", "QuartzCore", 3 },
 				{ "CoreData", "CoreData", 3 },
+				{ "CoreFoundation", "CoreFoundation", 3 },
 				{ "CoreGraphics", "CoreGraphics", 3 },
 				{ "CoreLocation", "CoreLocation", 3 },
 				{ "ExternalAccessory", "ExternalAccessory", 3 },
@@ -261,6 +285,7 @@ public class Frameworks : Dictionary <string, Framework>
 				{ "CoreImage", "CoreImage", 5 },
 				{ "CoreBluetooth", "CoreBluetooth", 5 },
 				{ "Twitter", "Twitter", 5 },
+				{ "GSS", "GSS", 5 },
 
 				{ "MediaToolbox", "MediaToolbox", 6 },
 				{ "PassKit", "PassKit", 6 },
@@ -312,7 +337,7 @@ public class Frameworks : Dictionary <string, Framework>
 				{ "IntentsUI", "IntentsUI", 10 },
 
 				{ "ARKit", "ARKit", 11 },
-				{ "CoreNFC", "CoreNFC", 11, true }, /* not always present, e.g. iPad w/iOS 12, so must be weak linked */
+				{ "CoreNFC", "CoreNFC", new Version (11, 0), NotAvailableInSimulator, true }, /* not always present, e.g. iPad w/iOS 12, so must be weak linked; doesn't work in the simulator in Xcode 12 (https://stackoverflow.com/q/63915728/183422) */
 				{ "DeviceCheck", "DeviceCheck", new Version (11, 0), new Version (13, 0) },
 				{ "IdentityLookup", "IdentityLookup", 11 },
 				{ "IOSurface", "IOSurface", new Version (11, 0), NotAvailableInSimulator /* Not available in the simulator (the header is there, but broken) */  },
@@ -343,6 +368,16 @@ public class Frameworks : Dictionary <string, Framework>
 
 				{ "AutomaticAssessmentConfiguration", "AutomaticAssessmentConfiguration", 13, 4 },
 
+				{ "Accessibility", "Accessibility", 14,0 },
+				{ "AppClip", "AppClip", 14,0 },
+				{ "AppTrackingTransparency", "AppTrackingTransparency", 14,0 },
+				{ "MediaSetup", "MediaSetup", new Version (14, 0), NotAvailableInSimulator /* no headers in beta 3 */ },
+				{ "MLCompute", "MLCompute", new Version (14,0), NotAvailableInSimulator },
+				{ "NearbyInteraction", "NearbyInteraction", 14,0 },
+				{ "ScreenTime", "ScreenTime", 14,0 },
+				{ "SensorKit", "SensorKit", 14,0 },
+				{ "UniformTypeIdentifiers", "UniformTypeIdentifiers", 14,0 },
+
 				// the above MUST be kept in sync with simlauncher
 				// see tools/mtouch/Makefile
 				// please also keep it sorted to ease comparison
@@ -351,8 +386,6 @@ public class Frameworks : Dictionary <string, Framework>
 				// 
 				// * RegistrarTest.MT4134
 			};
-		}
-		return ios_frameworks;
 	}
 
 	static Frameworks watch_frameworks;
@@ -406,8 +439,10 @@ public class Frameworks : Dictionary <string, Framework>
 				{ "PushKit", "PushKit", 6 },
 				{ "SoundAnalysis", "SoundAnalysis", 6 },
 				{ "CoreMedia", "CoreMedia", 6 },
-				{ "StoreKit", "StoreKit", 6,2 }
+				{ "StoreKit", "StoreKit", 6,2 },
 
+				{ "Accessibility", "Accessibility", 7,0 },
+				{ "UniformTypeIdentifiers", "UniformTypeIdentifiers", 7,0 },
 			};
 		}
 		return watch_frameworks;
@@ -430,6 +465,7 @@ public class Frameworks : Dictionary <string, Framework>
 					{ "CoreAudio", "CoreAudio", 9 },
 					{ "CoreBluetooth", "CoreBluetooth", 9 },
 					{ "CoreData", "CoreData", 9 },
+					{ "CoreFoundation", "CoreFoundation", 9 },
 					{ "CoreGraphics", "CoreGraphics", 9 },
 					{ "CoreImage", "CoreImage", 9 },
 					{ "CoreLocation", "CoreLocation", 9 },
@@ -486,10 +522,59 @@ public class Frameworks : Dictionary <string, Framework>
 					{ "AuthenticationServices", "AuthenticationServices", 13,0 },
 					{ "SoundAnalysis", "SoundAnalysis", 13,0 },
 					{ "BackgroundTasks", "BackgroundTasks", 13, 0 },
+
+					{ "Accessibility", "Accessibility", 14,0 },
+					{ "AppTrackingTransparency", "AppTrackingTransparency", 14,0 },
+					{ "CoreHaptics", "CoreHaptics", 14, 0 },
+					{ "LinkPresentation", "LinkPresentation", 14,0 },
+					{ "MLCompute", "MLCompute", new Version (14,0), NotAvailableInSimulator },
+					{ "UniformTypeIdentifiers", "UniformTypeIdentifiers", 14,0 },
+					{ "Intents", "Intents", 14,0 },
 				};
 			}
 			return tvos_frameworks;
 		}
+	}
+
+	static Frameworks catalyst_frameworks;
+	public static Frameworks GetMacCatalystFrameworks ()
+	{
+		if (catalyst_frameworks == null) {
+			catalyst_frameworks = CreateiOSFrameworks (false);
+
+			// These frameworks are not available on Mac Catalyst
+			catalyst_frameworks ["OpenGLES"].Unavailable = true;
+			catalyst_frameworks ["NewsstandKit"].Unavailable = true;
+			catalyst_frameworks ["MediaSetup"].Unavailable = true;
+			catalyst_frameworks ["NotificationCenter"].Unavailable = true;
+			catalyst_frameworks ["GLKit"].Unavailable = true;
+			catalyst_frameworks ["VideoSubscriberAccount"].Unavailable = true;
+
+			// The headers for FileProviderUI exist, but the native linker fails
+			catalyst_frameworks ["FileProviderUI"].Unavailable = true;
+
+			// The headers for Twitter are there, , but no documentation whatsoever online and the native linker fails too
+			catalyst_frameworks ["Twitter"].Unavailable = true;
+
+			// These frameworks were added to Catalyst after they were added to iOS, so we have to adjust the Versions fields
+			var fourteenTwoFrameworks = new [] {
+				"AddressBook",
+				"AddressBookUI",
+				"ARKit",
+				"AssetsLibrary",
+				"CarPlay",
+				"ClassKit",
+				"HomeKit",
+				"Messages",
+				"UserNotificationsUI",
+			};
+			foreach (var fw in fourteenTwoFrameworks) {
+				var f = catalyst_frameworks [fw];
+				f.Version = new Version (14, 2);
+				f.VersionAvailableInSimulator = new Version (14, 2);
+			}
+		}
+		return catalyst_frameworks;
 	}
 
 	// returns null if the platform doesn't exist (the ErrorHandler machinery is heavy and this file is included in several projects, which makes throwing an exception complicated)
@@ -504,6 +589,8 @@ public class Frameworks : Dictionary <string, Framework>
 			return TVOSFrameworks;
 		case ApplePlatform.MacOSX:
 			return MacFrameworks;
+		case ApplePlatform.MacCatalyst:
+			return GetMacCatalystFrameworks ();
 		default:
 			return null;
 		}
@@ -536,9 +623,14 @@ public class Frameworks : Dictionary <string, Framework>
 			if (app.IsSimulatorBuild && !framework.IsFrameworkAvailableInSimulator (app))
 				continue;
 
-			var add_to = app.DeploymentTarget >= framework.Version ? frameworks : weak_frameworks;
+			var weak_link = framework.AlwaysWeakLinked || app.DeploymentTarget < framework.Version;
+			var add_to = weak_link ? weak_frameworks : frameworks;
 			add_to.Add (framework.Name);
 		}
+
+		// Make sure there are no duplicates between frameworks and weak frameworks.
+		// Keep the weak ones.
+		frameworks.ExceptWith (weak_frameworks);
 	}
 
 	static bool FilterFrameworks (Application app, Framework framework)

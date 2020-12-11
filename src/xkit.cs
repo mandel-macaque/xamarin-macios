@@ -24,6 +24,8 @@ using NSImageScaling=System.Object;
 using NSRulerMarker=System.Object;
 using NSRulerView=System.Object;
 using NSTextBlock=System.Object;
+using NSTextList=System.Object;
+using NSTextTableBlock=System.Object;
 using NSTextStorageEditedFlags=System.Object;
 using NSTextView=System.Object;
 using NSTypesetter=System.Object;
@@ -35,6 +37,14 @@ using NSTextContainer=System.Object;
 using NSTextStorage=System.Object;
 #endif // WATCH
 #endif // !MONOMAC
+
+#if MONOMAC
+using TextAlignment=AppKit.NSTextAlignment;
+using LineBreakMode=AppKit.NSLineBreakMode;
+#else
+using TextAlignment=UIKit.UITextAlignment;
+using LineBreakMode=UIKit.UILineBreakMode;
+#endif
 
 #if MONOMAC
 namespace AppKit {
@@ -64,9 +74,6 @@ namespace UIKit {
 		NSAttributedString AttributedString { get; }
 #endif
 
-		[Export ("replaceTextStorage:")]
-		void ReplaceTextStorage (NSTextStorage newTextStorage);
-
 		[Export ("textContainers")]
 		NSTextContainer [] TextContainers { get; }
 
@@ -89,6 +96,7 @@ namespace UIKit {
 #if !XAMCORE_4_0
 		// This was removed in the headers in the macOS 10.11 SDK
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11)]
 		[Export ("layoutOptions")]
 		NSGlyphStorageOptions LayoutOptions { get; }
@@ -153,6 +161,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use ProcessEditing (NSTextStorage textStorage, NSTextStorageEditActions editMask, NSRange newCharacterRange, nint delta, NSRange invalidatedCharacterRange) instead).")]
 		[Export ("textStorage:edited:range:changeInLength:invalidatedRange:")]
 		void TextStorageEdited (NSTextStorage str, NSTextStorageEditedFlags editedMask, NSRange newCharRange, nint changeInLength, NSRange invalidatedCharRange);
@@ -186,6 +195,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use 'SetGlyphs' instead.")]
 		[Export ("insertGlyph:atGlyphIndex:characterIndex:")]
 		void InsertGlyph (NSGlyph glyph, nint glyphIndex, nint charIndex);
@@ -193,6 +203,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use 'SetGlyphs' instead.")]
 		[Export ("replaceGlyphAtIndex:withGlyph:")]
 		void ReplaceGlyphAtIndex (nint glyphIndex, NSGlyph newGlyph);
@@ -200,6 +211,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use 'SetGlyphs' instead.")]
 		[Export ("deleteGlyphsInRange:")]
 		void DeleteGlyphs (NSRange glyphRange);
@@ -207,6 +219,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use 'SetGlyphs' instead.")]
 		[Export ("setCharacterIndex:forGlyphAtIndex:")]
 		void SetCharacterIndex (nint charIndex, nint glyphIndex);
@@ -214,6 +227,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use 'SetGlyphs' instead.")]
 		[Export ("setIntAttribute:value:forGlyphAtIndex:")]
 		void SetIntAttribute (nint attributeTag, nint value, nint glyphIndex);
@@ -221,6 +235,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11, Message = "Use 'SetGlyphs' instead.")]
 		[Export ("invalidateGlyphsOnLayoutInvalidationForGlyphRange:")]
 		void InvalidateGlyphsOnLayoutInvalidation (NSRange glyphRange);
@@ -509,14 +524,17 @@ namespace UIKit {
 #endif
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("setLayoutRect:forTextBlock:glyphRange:")]
 		void SetLayoutRect (CGRect layoutRect, NSTextBlock forTextBlock, NSRange glyphRange);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("setBoundsRect:forTextBlock:glyphRange:")]
 		void SetBoundsRect (CGRect boundsRect, NSTextBlock forTextBlock, NSRange glyphRange);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("layoutRectForTextBlock:glyphRange:")]
 #if XAMCORE_4_0
 		CGRect GetLayoutRect (NSTextBlock block, NSRange glyphRange);
@@ -525,6 +543,7 @@ namespace UIKit {
 #endif
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("boundsRectForTextBlock:glyphRange:")]
 #if XAMCORE_4_0
 		CGRect GetBoundsRect (NSTextBlock block, NSRange glyphRange);
@@ -535,15 +554,18 @@ namespace UIKit {
 		/* GetLayoutRect (NSTextBlock, NSUInteger, nullable NSRangePointer) */
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Protected]
 		[Export ("layoutRectForTextBlock:atIndex:effectiveRange:")]
 		CGRect GetLayoutRect (NSTextBlock block, nuint glyphIndex, IntPtr effectiveGlyphRange);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Wrap ("GetLayoutRect (block, glyphIndex, IntPtr.Zero)")]
 		CGRect GetLayoutRect (NSTextBlock block, nuint glyphIndex);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Sealed]
 		[Export ("layoutRectForTextBlock:atIndex:effectiveRange:")]
 		CGRect GetLayoutRect (NSTextBlock block, nuint glyphIndex, out NSRange effectiveGlyphRange);
@@ -551,15 +573,18 @@ namespace UIKit {
 		/* GetBoundsRect (NSTextBlock, NSUInteger, nullable NSRangePointer) */
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Protected]
 		[Export ("boundsRectForTextBlock:atIndex:effectiveRange:")]
 		CGRect GetBoundsRect (NSTextBlock block, nuint glyphIndex, IntPtr effectiveGlyphRange);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Wrap ("GetBoundsRect (block, glyphIndex, IntPtr.Zero)")]
 		CGRect GetBoundsRect (NSTextBlock block, nuint glyphIndex);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Sealed]
 		[Export ("boundsRectForTextBlock:atIndex:effectiveRange:")]
 		CGRect GetBoundsRect (NSTextBlock block, nuint glyphIndex, out NSRange effectiveGlyphRange);
@@ -583,6 +608,7 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Obsolete ("Use 'GetGlyphRange' instead.")]
 		[Export ("glyphRangeForCharacterRange:actualCharacterRange:")]
 		NSRange GlyphRangeForCharacterRange (NSRange charRange, out NSRange actualCharRange);
@@ -624,6 +650,7 @@ namespace UIKit {
 
 		[Internal]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("rectArrayForGlyphRange:withinSelectedGlyphRange:inTextContainer:rectCount:")]
 		[Availability (Deprecated = Platform.Mac_10_11)]
 		IntPtr GetRectArray (NSRange glyphRange, NSRange selectedGlyphRange, IntPtr textContainerHandle, out nuint rectCount);
@@ -711,27 +738,29 @@ namespace UIKit {
 		/* GetTemporaryAttributes (NSUInteger, nullable NSRangePointer) */
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Protected]
 		[Export ("temporaryAttributesAtCharacterIndex:effectiveRange:")]
 		NSDictionary<NSString, NSObject> GetTemporaryAttributes (nuint characterIndex, IntPtr effectiveCharacterRange);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Wrap ("GetTemporaryAttributes (characterIndex, IntPtr.Zero)")]
 		NSDictionary<NSString, NSObject> GetTemporaryAttributes (nuint characterIndex);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Sealed]
 		[Export ("temporaryAttributesAtCharacterIndex:effectiveRange:")]
 		NSDictionary<NSString, NSObject> GetTemporaryAttributes (nuint characterIndex, out NSRange effectiveCharacterRange);
 
+		[NoiOS, NoTV, NoWatch]
+		[NoMacCatalyst]
 		[Export ("setTemporaryAttributes:forCharacterRange:")]
-#if XAMCORE_4_0 || !MONOMAC
-		void SetTemporaryAttributes (NSDictionary<NSString, NSObject> attributes, NSRange characterReange);
-#else
 		void SetTemporaryAttributes (NSDictionary attrs, NSRange charRange);
-#endif
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("addTemporaryAttributes:forCharacterRange:")]
 #if XAMCORE_4_0
 		void AddTemporaryAttributes (NSDictionary<NSString, NSObject> attributes, NSRange characterRange);
@@ -746,6 +775,7 @@ namespace UIKit {
 		[Sealed]
 #endif
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("removeTemporaryAttribute:forCharacterRange:")]
 		void RemoveTemporaryAttribute (NSString attributeName, NSRange characterRange);
 
@@ -753,6 +783,7 @@ namespace UIKit {
 		[Sealed]
 #endif
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("removeTemporaryAttribute:forCharacterRange:")]
 #if XAMCORE_4_0
 		void RemoveTemporaryAttribute (string attributeName, NSRange characterRange);
@@ -763,15 +794,18 @@ namespace UIKit {
 		/* GetTemporaryAttribute (NSString, NSUInteger, nullable NSRangePointer) */
 		[Protected]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("temporaryAttribute:atCharacterIndex:effectiveRange:")]
 		NSObject GetTemporaryAttribute (NSString attributeName, nuint characterIndex, /* nullable NSRangePointer */ IntPtr effectiveRange);
 
 		[Wrap ("GetTemporaryAttribute (attributeName, characterIndex, IntPtr.Zero)")]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		NSObject GetTemporaryAttribute (NSString attributeName, nuint characterIndex);
 
 		[Sealed]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("temporaryAttribute:atCharacterIndex:effectiveRange:")]
 		NSObject GetTemporaryAttribute (NSString attributeName, nuint characterIndex, /* nullable NSRangePointer */ out NSRange effectiveRange);
 
@@ -779,15 +813,18 @@ namespace UIKit {
 
 		[Protected]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("temporaryAttribute:atCharacterIndex:longestEffectiveRange:inRange:")]
 		NSObject GetTemporaryAttribute (NSString attributeName, nuint characterIndex, /* nullable NSRangePointer */ IntPtr longestEffectiveRange, NSRange rangeLimit);
 
 		[Wrap ("GetTemporaryAttribute (attributeName, characterIndex, IntPtr.Zero, rangeLimit)")]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		NSObject GetTemporaryAttribute (NSString attributeName, nuint characterIndex, NSRange rangeLimit);
 
 		[Sealed]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("temporaryAttribute:atCharacterIndex:longestEffectiveRange:inRange:")]
 		NSObject GetTemporaryAttribute (NSString attributeName, nuint characterIndex, /* nullable NSRangePointer */ out NSRange longestEffectiveRange, NSRange rangeLimit);
 
@@ -795,15 +832,18 @@ namespace UIKit {
 
 		[Protected]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("temporaryAttributesAtCharacterIndex:longestEffectiveRange:inRange:")]
 		NSDictionary<NSString, NSObject> GetTemporaryAttributes (nuint characterIndex, /* nullable NSRangePointer */ IntPtr longestEffectiveRange, NSRange rangeLimit);
 
 		[Wrap ("GetTemporaryAttributes (characterIndex, IntPtr.Zero, rangeLimit)")]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		NSDictionary<NSString, NSObject> GetTemporaryAttributes (nuint characterIndex, NSRange rangeLimit);
 
 		[Sealed]
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("temporaryAttributesAtCharacterIndex:longestEffectiveRange:inRange:")]
 		NSDictionary<NSString, NSObject> GetTemporaryAttributes (nuint characterIndex, /* nullable NSRangePointer */ out NSRange longestEffectiveRange, NSRange rangeLimit);
 
@@ -814,6 +854,7 @@ namespace UIKit {
 		[Sealed]
 #endif
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("addTemporaryAttribute:value:forCharacterRange:")]
 		void AddTemporaryAttribute (NSString attributeName, NSObject value, NSRange characterRange);
 
@@ -821,6 +862,7 @@ namespace UIKit {
 		[Sealed]
 #endif
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("addTemporaryAttribute:value:forCharacterRange:")]
 #if XAMCORE_4_0
 		void AddTemporaryAttribute (string attributeName, NSObject value, NSRange characterRange);
@@ -830,12 +872,14 @@ namespace UIKit {
 
 #if !XAMCORE_4_0
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11)]
 		[Export ("substituteFontForFont:")]
 		NSFont SubstituteFontForFont (NSFont originalFont);
 #endif
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("defaultLineHeightForFont:")]
 #if XAMCORE_4_0
 		nfloat GetDefaultLineHeight (NSFont font);
@@ -844,6 +888,7 @@ namespace UIKit {
 #endif
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("defaultBaselineOffsetForFont:")]
 #if XAMCORE_4_0
 		nfloat GetDefaultBaselineOffset (NSFont font);
@@ -856,11 +901,13 @@ namespace UIKit {
 		NSTextStorage TextStorage { get; set; }
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Availability (Deprecated = Platform.Mac_10_11)]
 		[Export ("glyphGenerator", ArgumentSemantic.Retain)]
 		NSGlyphGenerator GlyphGenerator { get; set; }
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("typesetter", ArgumentSemantic.Retain)]
 		NSTypesetter Typesetter { get; set; }
 
@@ -891,6 +938,7 @@ namespace UIKit {
 		[Deprecated (PlatformName.TvOS, 13, 0, message: "Please use 'UsesDefaultHyphenation' or 'NSParagraphStyle.HyphenationFactor' instead.")]
 		[Unavailable (PlatformName.UIKitForMac)]
 		[Advice ("This API is not available when using UIKit on macOS.")]
+		[NoMacCatalyst]
 		[Export ("hyphenationFactor")]
 #if MONOMAC
 		float HyphenationFactor { get; set; } /* This is defined as float in AppKit headers. */
@@ -899,14 +947,15 @@ namespace UIKit {
 #endif
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("defaultAttachmentScaling")]
 		NSImageScaling DefaultAttachmentScaling { get; set; }
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
 		[Export ("typesetterBehavior")]
 		NSTypesetterBehavior TypesetterBehavior { get; set; }
 
-		[iOS (7,0)]
 		[Export ("allowsNonContiguousLayout")]
 		bool AllowsNonContiguousLayout { get; set; }
 
@@ -1047,6 +1096,7 @@ namespace UIKit {
  		void Strikethrough (NSRange glyphRange, NSUnderlineStyle strikethroughVal, CGRect lineRect, NSRange lineGlyphRange, CGPoint containerOrigin);
 
 		[NoiOS][NoTV]
+		[NoMacCatalyst]
  		[Export ("showAttachmentCell:inRect:characterIndex:")]
 		void ShowAttachmentCell (NSCell cell, CGRect rect, nuint characterIndex);
 
@@ -1062,6 +1112,7 @@ namespace UIKit {
 	}
 
 	[NoiOS][NoWatch][NoTV]
+	[NoMacCatalyst]
 	[Category]
 	[BaseType (typeof (NSLayoutManager))]
 	interface NSLayoutManager_NSTextViewSupport {
@@ -1272,5 +1323,225 @@ namespace UIKit {
 
 		[Export ("reloadSectionsWithIdentifiers:")]
 		void ReloadSections (SectionIdentifierType [] sectionIdentifiers);
+	}
+
+	[ThreadSafe]
+	[BaseType (typeof (NSObject))]
+	interface NSParagraphStyle : NSSecureCoding, NSMutableCopying {
+		[Export ("lineSpacing")]
+		nfloat LineSpacing { get; [NotImplemented] set; }
+
+		[Export ("paragraphSpacing")]
+		nfloat ParagraphSpacing { get; [NotImplemented] set; }
+
+		[Export ("alignment")]
+		TextAlignment Alignment { get; [NotImplemented] set; }
+
+		[Export ("headIndent")]
+		nfloat HeadIndent { get; [NotImplemented] set; }
+
+		[Export ("tailIndent")]
+		nfloat TailIndent { get; [NotImplemented] set; }
+
+		[Export ("firstLineHeadIndent")]
+		nfloat FirstLineHeadIndent { get; [NotImplemented] set; }
+
+		[Export ("minimumLineHeight")]
+		nfloat MinimumLineHeight { get; [NotImplemented] set; }
+
+		[Export ("maximumLineHeight")]
+		nfloat MaximumLineHeight { get; [NotImplemented] set; }
+
+		[Export ("lineBreakMode")]
+		LineBreakMode LineBreakMode { get; [NotImplemented] set; }
+
+		[Export ("baseWritingDirection")]
+		NSWritingDirection BaseWritingDirection { get; [NotImplemented] set; }
+
+		[Export ("lineHeightMultiple")]
+		nfloat LineHeightMultiple { get; [NotImplemented] set; }
+
+		[Export ("paragraphSpacingBefore")]
+		nfloat ParagraphSpacingBefore { get; [NotImplemented] set; }
+
+		[Export ("hyphenationFactor")]
+		float HyphenationFactor { get; [NotImplemented] set; } // Returns a float, not nfloat.
+
+		[Static]
+		[Export ("defaultWritingDirectionForLanguage:")]
+		NSWritingDirection GetDefaultWritingDirection ([NullAllowed] string languageName);
+
+#if MONOMAC && !XAMCORE_4_0
+		[Obsolete ("Use the 'GetDefaultWritingDirection' method instead.")]
+		[Static]
+		[Export ("defaultWritingDirectionForLanguage:")]
+		NSWritingDirection DefaultWritingDirection ([NullAllowed] string languageName);
+#endif
+
+		[Static]
+		[Export ("defaultParagraphStyle", ArgumentSemantic.Copy)]
+		NSParagraphStyle Default { get; }
+
+#if MONOMAC && !XAMCORE_4_0
+		[Obsolete ("Use the 'Default' property instead.")]
+		[Static]
+		[Export ("defaultParagraphStyle", ArgumentSemantic.Copy)]
+		NSParagraphStyle DefaultParagraphStyle { get; [NotImplemented] set; }
+#endif
+
+		[iOS (7,0)]
+		[Export ("defaultTabInterval")]
+		nfloat DefaultTabInterval { get; [NotImplemented] set; }
+
+		[iOS (7,0)]
+		[Export ("tabStops", ArgumentSemantic.Copy)]
+		[NullAllowed]
+		NSTextTab[] TabStops { get; [NotImplemented] set; }
+
+		[iOS (9,0)]
+		[Mac (10,11)]
+		[Export ("allowsDefaultTighteningForTruncation")]
+		bool AllowsDefaultTighteningForTruncation { get; [NotImplemented] set; }
+
+		[NoiOS, NoTV, NoWatch]
+		[Export ("textBlocks")]
+#if XAMCORE_4_0
+		NSTextBlock [] TextBlocks { get; [NotImplemented] set; }
+#else
+		NSTextTableBlock [] TextBlocks { get; [NotImplemented] set; }
+#endif
+
+		[NoiOS, NoTV, NoWatch]
+		[Export ("textLists")]
+		NSTextList[] TextLists { get; [NotImplemented] set; }
+
+		[NoiOS, NoTV, NoWatch]
+		[Export ("tighteningFactorForTruncation")]
+		float TighteningFactorForTruncation { get; [NotImplemented] set; } /* float, not CGFloat */
+
+		[NoiOS, NoTV, NoWatch]
+		[Export ("headerLevel")]
+		nint HeaderLevel { get; [NotImplemented] set; }
+
+		[Mac (11,0), Watch (7,0), TV (14,0), iOS (14,0)]
+		[Export ("lineBreakStrategy")]
+		NSLineBreakStrategy LineBreakStrategy { get; [NotImplemented] set; }
+	}
+
+	[ThreadSafe]
+	[BaseType (typeof (NSParagraphStyle))]
+	interface NSMutableParagraphStyle {
+		[Export ("lineSpacing")]
+		[Override]
+		nfloat LineSpacing { get; set; }
+
+		[Export ("alignment")]
+		[Override]
+		TextAlignment Alignment { get; set; }
+
+		[Export ("headIndent")]
+		[Override]
+		nfloat HeadIndent { get; set; }
+
+		[Export ("tailIndent")]
+		[Override]
+		nfloat TailIndent { get; set; }
+
+		[Export ("firstLineHeadIndent")]
+		[Override]
+		nfloat FirstLineHeadIndent { get; set; }
+
+		[Export ("minimumLineHeight")]
+		[Override]
+		nfloat MinimumLineHeight { get; set; }
+
+		[Export ("maximumLineHeight")]
+		[Override]
+		nfloat MaximumLineHeight { get; set; }
+
+		[Export ("lineBreakMode")]
+		[Override]
+		LineBreakMode LineBreakMode { get; set; }
+
+		[Export ("baseWritingDirection")]
+		[Override]
+		NSWritingDirection BaseWritingDirection { get; set; }
+
+		[Export ("lineHeightMultiple")]
+		[Override]
+		nfloat LineHeightMultiple { get; set; }
+
+		[Export ("paragraphSpacing")]
+		[Override]
+		nfloat ParagraphSpacing { get; set; }
+
+		[Export ("paragraphSpacingBefore")]
+		[Override]
+		nfloat ParagraphSpacingBefore { get; set; }
+
+		[Export ("hyphenationFactor")]
+		[Override]
+		float HyphenationFactor { get; set; } // Returns a float, not nfloat.
+
+		[iOS (7,0)]
+		[Export ("defaultTabInterval")]
+		[Override]
+		nfloat DefaultTabInterval { get; set; }
+
+		[iOS (7,0)]
+		[Export ("tabStops", ArgumentSemantic.Copy)]
+		[Override]
+		[NullAllowed]
+		NSTextTab[] TabStops { get; set; }
+
+		[iOS (9,0)]
+		[Mac (10,11)]
+		[Override]
+		[Export ("allowsDefaultTighteningForTruncation")]
+		bool AllowsDefaultTighteningForTruncation { get; set; }
+
+		[iOS (9,0)]
+		[Export ("addTabStop:")]
+		void AddTabStop (NSTextTab textTab);
+
+		[iOS (9,0)]
+		[Export ("removeTabStop:")]
+		void RemoveTabStop (NSTextTab textTab);
+
+		[iOS (9,0)]
+		[Export ("setParagraphStyle:")]
+		void SetParagraphStyle (NSParagraphStyle paragraphStyle);
+
+		[NoiOS, NoTV, NoWatch]
+		[NoMacCatalyst]
+		[Override]
+		[Export ("textBlocks")]
+#if XAMCORE_4_0
+		NSTextBlock [] TextBlocks { get; set; }
+#else
+		NSTextTableBlock [] TextBlocks { get; set; }
+#endif
+
+		[NoiOS, NoTV, NoWatch]
+		[NoMacCatalyst]
+		[Override]
+		[Export ("textLists")]
+		NSTextList [] TextLists { get; set; }
+
+		[NoiOS, NoTV, NoWatch]
+		[Export ("tighteningFactorForTruncation")]
+		[Override]
+		float TighteningFactorForTruncation { get; set; } /* float, not CGFloat */
+
+		[NoiOS, NoTV, NoWatch]
+		[NoMacCatalyst]
+		[Export ("headerLevel")]
+		[Override]
+		nint HeaderLevel { get; set; }
+
+		[Mac (11,0), Watch (7,0), TV (14,0), iOS (14,0)]
+		[Override]
+		[Export ("lineBreakStrategy", ArgumentSemantic.Assign)]
+		NSLineBreakStrategy LineBreakStrategy { get; set; }
 	}
 }

@@ -6,6 +6,9 @@
 //
 // Copyrigh 2018 Microsoft Inc
 //
+
+#nullable enable
+
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
@@ -68,7 +71,7 @@ namespace Network {
 		[DllImport (Constants.NetworkLibrary)]
 		extern static IntPtr nw_path_copy_effective_local_endpoint (IntPtr handle);
 
-		public NWEndpoint EffectiveLocalEndpoint {
+		public NWEndpoint? EffectiveLocalEndpoint {
 			get {
 				var x = nw_path_copy_effective_local_endpoint (GetCheckedHandle ());
 				if (x == IntPtr.Zero)
@@ -80,7 +83,7 @@ namespace Network {
 		[DllImport (Constants.NetworkLibrary)]
 		extern static IntPtr nw_path_copy_effective_remote_endpoint (IntPtr handle);
 
-		public NWEndpoint EffectiveRemoteEndpoint {
+		public NWEndpoint? EffectiveRemoteEndpoint {
 			get {
 				var x = nw_path_copy_effective_remote_endpoint (GetCheckedHandle ());
 				if (x == IntPtr.Zero)
@@ -131,14 +134,14 @@ namespace Network {
 			}
 		}
 
-		[TV (13,0), Mac (10,15), iOS (13,0), Watch (6,0)]
+		[TV (13,0), Mac (10,15), iOS (13,0)]
 		[DllImport (Constants.NetworkLibrary)]
 		static extern bool nw_path_is_constrained (IntPtr path);
 
-		[TV (13,0), Mac (10,15), iOS (13,0), Watch (6,0)]
+		[TV (13,0), Mac (10,15), iOS (13,0)]
 		public bool IsConstrained => nw_path_is_constrained (GetCheckedHandle ());
 
-		[TV (13,0), Mac (10,15), iOS (13,0), Watch (6,0)]
+		[TV (13,0), Mac (10,15), iOS (13,0)]
 		[DllImport (Constants.NetworkLibrary)]
 		static extern void nw_path_enumerate_gateways (IntPtr path, ref BlockLiteral enumerate_block);
 
@@ -155,7 +158,7 @@ namespace Network {
 			}
 		}
 
-		[TV (13,0), Mac (10,15), iOS (13,0), Watch (6,0)]
+		[TV (13,0), Mac (10,15), iOS (13,0)]
 		[BindingImpl (BindingImplOptions.Optimizable)]
 		public void EnumerateGateways (Action<NWEndpoint> callback)
 		{

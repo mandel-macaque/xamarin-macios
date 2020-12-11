@@ -30,6 +30,8 @@ using CoreFoundation;
 using ObjCRuntime;
 #if !MONOMAC
 using Metal;
+#endif
+#if HAS_OPENGLES
 using OpenGLES;
 #endif
 namespace CoreImage {
@@ -129,6 +131,16 @@ namespace CoreImage {
 				SetBooleanValue (CIContext.AllowLowPower, value);
 			}
 		}
+
+		[iOS (14,0)][TV (14,0)][Mac (11,0)]
+		public string Name {
+			get {
+				return GetStringValue (CIContext.Name);
+			}
+			set {
+				SetStringValue (CIContext.Name, value);
+			}
+		}
 	}
 	
 	public partial class CIContext {
@@ -149,7 +161,7 @@ namespace CoreImage {
 			return FromContext (ctx, (CIContextOptions) null);
 		}
 
-#if !MONOMAC
+#if HAS_OPENGLES
 		public static CIContext FromContext (EAGLContext eaglContext, CIContextOptions options)
 		{
 			if (options == null)

@@ -67,6 +67,15 @@ namespace MonoTouchFixtures.MediaAccessibility {
 		[Test]
 		public void SetCaption ()
 		{
+#if __MACOS__
+			// looks like Apple broke something inside Xcode 12.2 Beta 2 in both sim and device
+			// NSInvalidArgumentException Reason: -[__NSCFType _getValue:forType:]: unrecognized selector sent to instance
+			// when calling MAImageCaptioning.SetCaption
+			// Seems to be fixed for iOS now but not for macOS
+			if (TestRuntime.CheckExactXcodeVersion (12, 2, beta: 3))
+				Assert.Ignore ("Broken in Xcode 12.2 Beta 3");
+#endif
+
 			TestRuntime.AssertXcodeVersion (11, 0);
 			Assert.Throws<ArgumentNullException> (() => MAImageCaptioning.SetCaption (null, "xamarin", out _));
 			// note: calling on a remote URL crash the process - not that it should work but...
@@ -95,12 +104,20 @@ namespace MonoTouchFixtures.MediaAccessibility {
 					Assert.Null (e, "ro / set / no error"); // weird, it can't be saved back to the file metadata
 
 					var s = MAImageCaptioning.GetCaption (url, out e);
-					Assert.Null (s, "ro / roundtrip"); // not very surprising since Set can't save it
+					if (TestRuntime.CheckXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch)) {
+						Assert.AreEqual ("xamarin", s, "ro / roundtrip");
+					} else {
+						Assert.Null (s, "ro / roundtrip"); // not very surprising since Set can't save it
+					}
 					Assert.Null (e, "ro / get / no error");
 
 					Assert.True (MAImageCaptioning.SetCaption (url, "xamarin", out e), "Set 2");
 					s = MAImageCaptioning.GetCaption (url, out e);
-					Assert.Null (s, "ro / back to original");
+					if (TestRuntime.CheckXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch)) {
+						Assert.AreEqual ("xamarin", s, "ro / back to original");
+					} else {
+						Assert.Null (s, "ro / back to original");
+					}
 					Assert.Null (e, "ro / get back / no error");
 				}
 
@@ -113,12 +130,20 @@ namespace MonoTouchFixtures.MediaAccessibility {
 				Assert.Null (e, "rw / set / no error"); // weird, it can't be saved back to the file metadata
 
 				var s = MAImageCaptioning.GetCaption (rw_url, out e);
-				Assert.Null (s, "rw / roundtrip"); // :(
+				if (TestRuntime.CheckXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch)) {
+					Assert.AreEqual ("xamarin", s, "rw / roundtrip"); // :)
+				} else {
+					Assert.Null (s, "rw / roundtrip"); // :(
+				}
 				Assert.Null (e, "rw / get / no error");
 
 				Assert.True (MAImageCaptioning.SetCaption (rw_url, "xamarin", out e), "Set 2");
 				s = MAImageCaptioning.GetCaption (rw_url, out e);
-				Assert.Null (s, "rw / back to original");
+				if (TestRuntime.CheckXcodeVersion (12, TestRuntime.MinorXcode12APIMismatch)) {
+					Assert.AreEqual ("xamarin", s, "rw / back to original");
+				} else {
+					Assert.Null (s, "rw / back to original");
+				}
 				Assert.Null (e, "rw / get back / no error");
 			}
 		}

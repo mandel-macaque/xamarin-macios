@@ -198,6 +198,8 @@ namespace Introspection {
 				return true;
 			case "AVFoundation.AVAudioRecorder": // Stopped working in macOS 10.15.2
 				return TestRuntime.CheckXcodeVersion (11, 2);
+			case "GameKit.GKGameCenterViewController": // the native 'init' method returned nil.
+				return TestRuntime.CheckXcodeVersion (11, 2);
 
 			}
 
@@ -226,6 +228,10 @@ namespace Introspection {
 				break;
 			case "QTKit":
 				if (Mac.CheckSystemVersion (10, 15)) // QTKit is gone in 10.15
+					return true;
+				break;
+			case "ModelIO": // Looks like it is broken in macOS beta 9
+				if (Mac.CheckSystemVersion (11, 0)) // Causes error on test: turning unknown type for VtValue with unregistered C++ type bool
 					return true;
 				break;
 			}
@@ -294,6 +300,17 @@ namespace Introspection {
 			case "MonoMac.AVFoundation.AVCaptureDeviceInputSource": // Crashes on 10.9.5
 			case "AVFoundation.AVCaptureDeviceInputSource":
 				break;
+			// 11.0
+			case "AVFoundation.AVMediaSelection":
+			case "AVFoundation.AVMutableMediaSelection":
+			case "CoreLocation.CLBeacon":
+			case "GameKit.GKTurnBasedMatch":
+				break;
+			// crash with xcode 12.2 Beta 2 (and GM in iOS)
+			case "CoreSpotlight.CSLocalizedString":
+				if (TestRuntime.CheckXcodeVersion (12, 0))
+					return;
+				break;
 			default:
 				base.CheckToString (obj);
 				break;
@@ -349,6 +366,9 @@ namespace Introspection {
 				// crashes on El Capitan (b2) but not before
 				if (!Mac.CheckSystemVersion (10, 11))
 					goto default;
+				do_not_dispose.Add (obj);
+				break;
+			case "CoreLocation.CLBeacon":
 				do_not_dispose.Add (obj);
 				break;
 			default:

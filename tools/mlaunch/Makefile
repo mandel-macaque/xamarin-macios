@@ -6,12 +6,36 @@ COLOR_GREEN:=$(shell tput setaf 120 2>/dev/null)
 COLOR_CLEAR:=$(shell tput sgr0 2>/dev/null)
 
 ifdef ENABLE_XAMARIN
-all-local install-local clean-local::
-	$(MAKE) -C $(MACCORE_PATH)/tools/mlaunch $@
+ifdef INCLUDE_MAC
+ENABLE_MLAUNCH=1
+endif
+endif
+
+DOTNET_PLATFORMS_MOBILE=$(filter-out macOS,$(DOTNET_PLATFORMS))
+
+ifdef ENABLE_MLAUNCH
+build-and-install:
+	$(MAKE) -C $(MACCORE_PATH)/tools/mlaunch all -j8
+	$(MAKE) -C $(MACCORE_PATH)/tools/mlaunch install -j8
 else
-all-local install-local::
+build-and-install:
 	$(Q) $(CP) -R $(MACIOS_BINARIES_PATH)/mlaunch/bin/mlaunch $(IOS_DESTDIR)/Library/Frameworks/Xamarin.iOS.framework/Versions/Current/bin
 	$(Q) $(CP) -R $(MACIOS_BINARIES_PATH)/mlaunch/lib/mlaunch $(IOS_DESTDIR)/Library/Frameworks/Xamarin.iOS.framework/Versions/Current/lib
+endif
+
+all-local:: build-and-install
+
+ifdef ENABLE_MLAUNCH
+clean-local::
+	$(MAKE) -C $(MACCORE_PATH)/tools/mlaunch $@
+endif
+
+ifdef ENABLE_DOTNET
+all-local:: build-and-install
+	$(Q) for platform in $(DOTNET_PLATFORMS_MOBILE); do \
+		$(CP) -R $(IOS_DESTDIR)/Library/Frameworks/Xamarin.iOS.framework/Versions/Current/bin/mlaunch $(DOTNET_DESTDIR)/Microsoft.$$platform.Sdk/tools/bin; \
+		$(CP) -R $(IOS_DESTDIR)/Library/Frameworks/Xamarin.iOS.framework/Versions/Current/lib/mlaunch $(DOTNET_DESTDIR)/Microsoft.$$platform.Sdk/tools/lib; \
+	done
 endif
 
 ifdef ENABLE_XAMARIN
