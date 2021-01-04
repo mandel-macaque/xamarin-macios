@@ -33,7 +33,7 @@ steps:
   inputs:
     patterns: '**/*.json'
     allowFailedBuilds: true
-    path:  $(System.DefaultWorkingDirectory)/artifacts
+    path: $(System.DefaultWorkingDirectory)/artifacts
 
 - powershell: |
     Get-ChildItem -Recurse $Env:SYSTEM_DEFAULTWORKINGDIRECTORY
