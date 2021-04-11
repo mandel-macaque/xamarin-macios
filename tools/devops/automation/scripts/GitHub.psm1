@@ -698,8 +698,8 @@ function New-GistWithContent {
 
     $url = "https://api.github.com/gists"
     $payloadJson = $payload | ConvertTo-Json
-    Write-Host "Url is $url"
-    Write-Host "Payload is $payloadJson"
+    Write-Debug "Url is $url"
+    Write-Debug "Payload is $payloadJson"
 
     $headers = @{
         Accept = "application/vnd.github.v3+json";
@@ -784,8 +784,8 @@ function New-GistWithFiles {
 
     $url = "https://api.github.com/gists"
     $payloadJson = $payload | ConvertTo-Json
-    Write-Host "Url is $url"
-    Write-Host "Payload is $payloadJson"
+    Write-Debug "Url is $url"
+    Write-Debug "Payload is $payloadJson"
 
     $headers = @{
         Accept = "application/vnd.github.v3+json";
@@ -793,7 +793,7 @@ function New-GistWithFiles {
     } 
 
     $request = Invoke-Request -Request { Invoke-RestMethod -Uri $url -Headers $headers -Method "POST" -Body $payloadJson -ContentType 'application/json' }
-    Write-Host $request
+    Write-Debug $request
     return $request.html_url
 }
 

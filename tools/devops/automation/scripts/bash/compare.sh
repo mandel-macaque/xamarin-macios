@@ -34,6 +34,7 @@ fi
 
 cd $XAM_TOP
 
+
 MARKDOWN_INDENT="&nbsp;&nbsp;&nbsp;&nbsp;"
 echo "*** Comparing API & creating generator diff... ***"
 export COMPARE_FAILURE_FILE=$TMPDIR/api-diff-compare-failures.txt
@@ -74,6 +75,8 @@ ls -Rla ./tools/comparison/apidiff
 cp -R ./tools/comparison/apidiff/diff "$API_COMPARISON"
 cp    ./tools/comparison/apidiff/*.html "$API_COMPARISON"
 cp -R ./tools/comparison/generator-diff "$API_COMPARISON"
+
+url=$(pwsh "$XAM_TOP/tools/devops/automation/script/new-md-gist.ps1" -FileName "$fileName" -FilePath "$filePath" -Description "$description")
 
 if ! grep "href=" "$API_COMPARISON/api-diff.html" >/dev/null 2>&1; then
 	printf ":white_check_mark: [API Diff (from PR only)](%s) (no change)" "$API_URL" >> "$WORKSPACE/api-diff-comments.md"
