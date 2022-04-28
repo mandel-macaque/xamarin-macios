@@ -1,9 +1,8 @@
 ﻿using System;
-using Mono.Cecil;
 
 #nullable enable
 
-namespace Microsoft.MaciOS.AssemblyComparator {
+namespace Microsoft.MaciOS.Nnyeah.AssemblyComparator {
 	public class ItemNotFoundEventArgs<T> : EventArgs {
 		public ItemNotFoundEventArgs (string original)
 		{
