@@ -33,10 +33,10 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 		{
 			foreach (var typeName in earlier.Types.Keys) {
 				if (!later.Types.TryGetValue (typeName, out var laterElems)) {
-					TypeNotFound.Invoke (this, new TypeNotFoundEventArgs (typeName));
+					TypeNotFound.Invoke (this, new (typeName));
 					continue;
 				} else {
-					TypeFound.Invoke (this, new TypeFoundEventArgs (typeName, laterElems.DeclaringType.ToString ()));
+					TypeFound.Invoke (this, new (typeName, laterElems.DeclaringType.ToString ()));
 				}
 				if (!earlier.Types.TryGetValue (typeName, out var earlierElems)) {
 					throw new Exception (Errors.E0007);
@@ -87,26 +87,26 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 		void FireElementNotFound<T> (TypeElement<T> earlier) where T : IMemberDefinition
 		{
 			if (earlier is TypeElement<FieldDefinition> field) {
-				FieldNotFound.Invoke (this, new FieldNotFoundEventArgs (field.Signature));
+				FieldNotFound.Invoke (this, new (field.Signature));
 			} else if (earlier is TypeElement<MethodDefinition> method) {
-				MethodNotFound.Invoke (this, new MethodNotFoundEventArgs (method.Signature));
+				MethodNotFound.Invoke (this, new (method.Signature));
 			} else if (earlier is TypeElement<EventDefinition> @event) {
-				EventNotFound.Invoke (this, new EventNotFoundEventArgs (@event.Signature));
+				EventNotFound.Invoke (this, new(@event.Signature));
 			} else if (earlier is TypeElement<PropertyDefinition> property) {
-				PropertyNotFound.Invoke (this, new PropertyNotFoundEventArgs (property.Signature));
+				PropertyNotFound.Invoke (this, new (property.Signature));
 			}
 		}
 
 		void FireElementFound<T> (TypeElement<T> earlier, TypeElement<T> later) where T : IMemberDefinition
 		{
 			if (earlier is TypeElement<FieldDefinition> field) {
-				FieldFound.Invoke (this, new FieldFoundEventArgs (field.Signature, later.Signature));
+				FieldFound.Invoke (this, new (field.Signature, later.Signature));
 			} else if (earlier is TypeElement<MethodDefinition> method) {
-				MethodFound.Invoke (this, new MethodFoundEventArgs (method.Signature, later.Signature));
+				MethodFound.Invoke (this, new (method.Signature, later.Signature));
 			} else if (earlier is TypeElement<EventDefinition> @event) {
-				EventFound.Invoke (this, new EventFoundEventArgs (@event.Signature, later.Signature));
+				EventFound.Invoke (this, new(@event.Signature, later.Signature));
 			} else if (earlier is TypeElement<PropertyDefinition> property) {
-				PropertyFound.Invoke (this, new PropertyFoundEventArgs (earlier.Signature, later.Signature));
+				PropertyFound.Invoke (this, new (earlier.Signature, later.Signature));
 			}
 		}
 
@@ -126,19 +126,19 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 			}
 		}
 
-		public EventHandler<TypeNotFoundEventArgs> TypeNotFound = (s, e) => { };
-		public EventHandler<TypeFoundEventArgs> TypeFound = (s, e) => { };
+		public EventHandler<ItemNotFoundEventArgs<TypeDefinition>> TypeNotFound = (s, e) => { };
+		public EventHandler<ItemFoundEventArgs<TypeDefinition>> TypeFound = (s, e) => { };
 
-		public EventHandler<MethodNotFoundEventArgs> MethodNotFound = (s, e) => { };
-		public EventHandler<MethodFoundEventArgs> MethodFound = (s, e) => { };
+		public EventHandler<ItemNotFoundEventArgs<MethodDefinition>> MethodNotFound = (s, e) => { };
+		public EventHandler<ItemFoundEventArgs<MethodDefinition>> MethodFound = (s, e) => { };
 
-		public EventHandler<FieldNotFoundEventArgs> FieldNotFound = (s, e) => { };
-		public EventHandler<FieldFoundEventArgs> FieldFound = (s, e) => { };
+		public EventHandler<ItemNotFoundEventArgs<FieldDefinition>> FieldNotFound = (s, e) => { };
+		public EventHandler<ItemFoundEventArgs<FieldDefinition>> FieldFound = (s, e) => { };
 
-		public EventHandler<EventNotFoundEventArgs> EventNotFound = (s, e) => { };
-		public EventHandler<EventFoundEventArgs> EventFound = (s, e) => { };
+		public EventHandler<ItemNotFoundEventArgs<EventDefinition>> EventNotFound = (s, e) => { };
+		public EventHandler<ItemFoundEventArgs<EventDefinition>> EventFound = (s, e) => { };
 
-		public EventHandler<PropertyNotFoundEventArgs> PropertyNotFound = (s, e) => { };
-		public EventHandler<PropertyFoundEventArgs> PropertyFound = (s, e) => { };
+		public EventHandler<ItemNotFoundEventArgs<PropertyDefinition>> PropertyNotFound = (s, e) => { };
+		public EventHandler<ItemFoundEventArgs<PropertyDefinition>> PropertyFound = (s, e) => { };
 	}
 }
