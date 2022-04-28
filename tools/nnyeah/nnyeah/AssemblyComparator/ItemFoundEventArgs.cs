@@ -29,6 +29,6 @@ namespace Microsoft.MaciOS.Nnyeah.AssemblyComparator {
 			Found.Invoke (sender, new(original, mapped));
 
 		public void InvokeNotFound (object sender, string original) =>
-			NotFound (sender, new(original));
+			NotFound.Invoke (sender, new(original));
 	}
 }
