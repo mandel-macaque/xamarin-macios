@@ -161,6 +161,8 @@ namespace Microsoft.MaciOS.Nnyeah {
 				Console.Error.WriteLine (Errors.E0006, path, e.Message);
 				Environment.Exit (1);
 			}
+
+			return default;
 		}
 
 		static void PrintOptions (OptionSet options, TextWriter writer)
