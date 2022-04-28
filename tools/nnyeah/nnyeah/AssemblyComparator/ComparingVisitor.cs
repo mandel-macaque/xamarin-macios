@@ -93,20 +93,13 @@ namespace Microsoft.MaciOS.Nnyeah.AssemblyComparator {
 			events.InvokeNotFound (this, elemSignature);
 		}
 
-		static string RemappedSignature<T> (TypeReworker reworker, T elem)
-		{
-			switch (elem) {
-			case MethodDefinition method:
-				return reworker.ReworkMethod (method).ToString ();
-			case FieldDefinition field:
-				return reworker.ReworkField (field).ToString ();
-			case EventDefinition @event:
-				return reworker.ReworkEvent (@event).ToString ();
-			case PropertyDefinition property:
-				return reworker.ReworkProperty (property).ToString ();
-			default:
-				throw new ArgumentException (nameof (elem));
-			}
-		}
+		static string RemappedSignature<T> (TypeReworker reworker, T elem) =>
+			elem switch {
+				MethodDefinition method => reworker.ReworkMethod (method).ToString (),
+				FieldDefinition field => reworker.ReworkField (field).ToString (),
+				EventDefinition @event => reworker.ReworkEvent (@event).ToString (),
+				PropertyDefinition property => reworker.ReworkProperty (property).ToString (),
+				_ => throw new ArgumentException (nameof (elem))
+			};
 	}
 }
