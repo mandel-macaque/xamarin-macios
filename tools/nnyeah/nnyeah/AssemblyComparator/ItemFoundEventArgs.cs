@@ -4,7 +4,7 @@ using Mono.Cecil;
 #nullable enable
 
 namespace Microsoft.MaciOS.AssemblyComparator {
-	public class ItemNotFoundEventArgs<T> : EventArgs where T: IMemberDefinition{
+	public class ItemNotFoundEventArgs<T> : EventArgs {
 		public ItemNotFoundEventArgs (string original)
 		{
 			Original = original;
@@ -12,7 +12,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 		public string Original { get; }
 	}
 
-	public class ItemFoundEventArgs<T> : EventArgs where T: IMemberDefinition{
+	public class ItemFoundEventArgs<T> : EventArgs {
 		public ItemFoundEventArgs (string original, string mapped)
 		{
 			Original = original;
@@ -22,7 +22,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 		public string Mapped { get; }
 	}
 
-	public class ItemEvents<T> where T : IMemberDefinition {
+	public class ItemEvents<T> {
 		public EventHandler<ItemNotFoundEventArgs<T>> NotFound = (s, e) => { };
 		public EventHandler<ItemFoundEventArgs<T>> Found = (s, e) => { };
 
