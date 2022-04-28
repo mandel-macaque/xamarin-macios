@@ -35,7 +35,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 				if (e.Kind == VisitKind.Start) {
 					var typeElements = typeStack.Peek ();
 					var member = e.Member;
-					typeElements.Fields.Add (new(member));
+					typeElements.Fields.Add (member);
 				}
 			};
 
@@ -43,7 +43,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 				if (e.Kind == VisitKind.Start) {
 					var typeElements = typeStack.Peek ();
 					var member = e.Member;
-					typeElements.Events.Add (new(member));
+					typeElements.Events.Add (member);
 				}
 			};
 
@@ -51,7 +51,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 				if (e.Kind == VisitKind.Start) {
 					var typeElements = typeStack.Peek ();
 					var member = e.Member;
-					typeElements.Properties.Add (new(member));
+					typeElements.Properties.Add (member);
 				}
 			};
 
@@ -59,7 +59,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 				if (e.Kind == VisitKind.Start) {
 					var typeElements = typeStack.Peek ();
 					var member = e.Member;
-					typeElements.Methods.Add (new(member));
+					typeElements.Methods.Add (member);
 				}
 			};
 

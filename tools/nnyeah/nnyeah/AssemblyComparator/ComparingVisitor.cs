@@ -60,15 +60,15 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 		}
 
 		void VisitMembers<T> (TypeReworker reworker,
-			List<TypeElement<T>> earlier, List<TypeElement<T>> later, ItemEvents<T> events) where T : IMemberDefinition
+			List<T> earlier, List<T> later, ItemEvents<T> events) where T : IMemberDefinition
 		{
 			foreach (var earlierElem in earlier) {
 				VisitMember (reworker, earlierElem, later, events);
 			}
 		}
 
-		void VisitMember<T> (TypeReworker reworker, TypeElement<T> elem,
-			List<TypeElement<T>> later, ItemEvents<T> events) where T : IMemberDefinition
+		void VisitMember<T> (TypeReworker reworker, T elem,
+			List<T> later, ItemEvents<T> events) where T : IMemberDefinition
 		{
 			var elemSignature = elem.ToString ();
 			foreach (var late in later) {
@@ -78,7 +78,7 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 					return;
 				}
 			}
-			var remappedSig = RemappedSignature (reworker, elem.Element);
+			var remappedSig = RemappedSignature (reworker, elem);
 			if (remappedSig == elemSignature) {
 				events.InvokeNotFound (this, elemSignature);
 				return;
