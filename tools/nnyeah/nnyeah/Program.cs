@@ -65,10 +65,10 @@ namespace Microsoft.MaciOS.Nnyeah {
 				Environment.Exit (1);
 			}
 
-			using var ealierFile = TryOpenRead (earlier);
+			using var earlierFile = TryOpenRead (earlier);
 			using var laterFile = TryOpenRead (later);
 
-			var earlierModule = ModuleDefinition.ReadModule (ealierFile);
+			var earlierModule = ModuleDefinition.ReadModule (earlierFile);
 			var laterModule = ModuleDefinition.ReadModule (laterFile);
 
 			var comparingVisitor = new ComparingVisitor (earlierModule, laterModule, publicOnly);
@@ -161,7 +161,6 @@ namespace Microsoft.MaciOS.Nnyeah {
 				Console.Error.WriteLine (Errors.E0006, path, e.Message);
 				Environment.Exit (1);
 			}
-			return new MemoryStream (); // never reached, thanks code analysis
 		}
 
 		static void PrintOptions (OptionSet options, TextWriter writer)
