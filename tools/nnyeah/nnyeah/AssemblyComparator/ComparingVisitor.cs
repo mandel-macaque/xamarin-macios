@@ -7,8 +7,9 @@ using Mono.Cecil;
 
 namespace Microsoft.MaciOS.AssemblyComparator {
 	public class ComparingVisitor {
-		ModuleDefinition EarlierModule, LaterModule;
-		bool PublicOnly;
+		readonly ModuleDefinition earlierModule;
+		readonly ModuleDefinition laterModule;
+		readonly bool publicOnly;
 
 		public ItemEvents<TypeDefinition> TypeEvents { get; } = new ();
 		public ItemEvents<MethodDefinition> MethodEvents { get; } = new ();
@@ -18,36 +19,36 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 
 		public ComparingVisitor (ModuleDefinition earlierModule, ModuleDefinition laterModule, bool publicOnly)
 		{
-			EarlierModule = earlierModule;
-			LaterModule = laterModule;
-			PublicOnly = publicOnly;
+			this.earlierModule = earlierModule;
+			this.laterModule = laterModule;
+			this.publicOnly = publicOnly;
 		}
 
 		public void Visit ()
 		{
-			var earlierElements = ModuleElements.Import (EarlierModule, PublicOnly);
+			var earlierElements = ModuleElements.Import (earlierModule, publicOnly);
 			if (earlierElements is null)
 				throw new Exception (Errors.E0007);
-			var laterElements = ModuleElements.Import (LaterModule, PublicOnly);
+			var laterElements = ModuleElements.Import (laterModule, publicOnly);
 			if (laterElements is null)
 				throw new Exception (Errors.E0007);
-			var reworker = new TypeReworker (EarlierModule);
+			var reworker = new TypeReworker (earlierModule);
 			VisitTypes (reworker, earlierElements, laterElements);
 		}
 
 		void VisitTypes (TypeReworker reworker, ModuleElements earlier, ModuleElements later)
 		{
 			foreach (var typeName in earlier.Types.Keys) {
-				if (!later.Types.TryGetValue (typeName, out var laterElems)) {
-					TypeEvents.InvokeNotFound (this, typeName);
-					continue;
+				if (later.Types.TryGetValue (typeName, out var laterElems)) {
+					 TypeEvents.InvokeFound (this, typeName, laterElems.DeclaringType.ToString ());
+					 if (earlier.Types.TryGetValue (typeName, out var earlierElems)) {
+						 VisitAllMembers (reworker, earlierElems, laterElems);
+					 } else {
+						 throw new Exception (Errors.E0007);
+					 }
 				} else {
-					TypeEvents.InvokeFound (this, typeName, laterElems.DeclaringType.ToString ());
+					TypeEvents.InvokeNotFound (this, typeName);
 				}
-				if (!earlier.Types.TryGetValue (typeName, out var earlierElems)) {
-					throw new Exception (Errors.E0007);
-				}
-				VisitAllMembers (reworker, earlierElems, laterElems);
 			}
 		}
 
