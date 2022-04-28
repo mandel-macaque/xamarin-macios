@@ -7,16 +7,14 @@ using Mono.Cecil;
 
 namespace Microsoft.MaciOS.AssemblyComparator {
 	public class TypeElement<T> where T : IMemberDefinition {
-		public TypeElement (string signature, T element)
+		public TypeElement (T element)
 		{
-			Signature = signature;
 			Element = element;
 		}
-		public string Signature { get; init; }
 		public T Element { get; init; }
 		public override string ToString ()
 		{
-			return Signature;
+			return Element.ToString ();
 		}
 	}
 

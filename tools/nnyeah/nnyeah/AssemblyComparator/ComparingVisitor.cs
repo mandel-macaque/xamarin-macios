@@ -70,24 +70,27 @@ namespace Microsoft.MaciOS.AssemblyComparator {
 		void VisitMember<T> (TypeReworker reworker, TypeElement<T> elem,
 			List<TypeElement<T>> later, ItemEvents<T> events) where T : IMemberDefinition
 		{
+			var elemSignature = elem.ToString ();
 			foreach (var late in later) {
-				if (elem.Signature == late.Signature) {
-					events.InvokeFound (this, elem.Signature, late.Signature);
+				var lateSignature = late.ToString ();
+				if (elemSignature == lateSignature) {
+					events.InvokeFound (this, elemSignature, lateSignature);
 					return;
 				}
 			}
 			var remappedSig = RemappedSignature (reworker, elem.Element);
-			if (remappedSig == elem.Signature) {
-				events.InvokeNotFound (this, elem.Signature);
+			if (remappedSig == elemSignature) {
+				events.InvokeNotFound (this, elemSignature);
 				return;
 			}
 			foreach (var late in later) {
-				if (remappedSig == late.Signature) {
-					events.InvokeFound (this, elem.Signature, late.Signature);
+				var lateSignature = late.ToString ();
+				if (remappedSig == lateSignature) {
+					events.InvokeFound (this, elemSignature, lateSignature);
 					return;
 				}
 			}
-			events.InvokeNotFound (this, elem.Signature);
+			events.InvokeNotFound (this, elemSignature);
 		}
 
 		static string RemappedSignature<T> (TypeReworker reworker, T elem) where T : IMemberDefinition
