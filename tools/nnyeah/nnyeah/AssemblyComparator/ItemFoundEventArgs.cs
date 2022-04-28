@@ -25,10 +25,10 @@ namespace Microsoft.MaciOS.Nnyeah.AssemblyComparator {
 		public EventHandler<ItemNotFoundEventArgs<T>> NotFound = (s, e) => { };
 		public EventHandler<ItemFoundEventArgs<T>> Found = (s, e) => { };
 
-		public void InvokeFound (object sender, string original, string mapped) =>
+		internal void InvokeFound (object sender, string original, string mapped) =>
 			Found.Invoke (sender, new(original, mapped));
 
-		public void InvokeNotFound (object sender, string original) =>
+		internal void InvokeNotFound (object sender, string original) =>
 			NotFound.Invoke (sender, new(original));
 	}
 }
