@@ -132,6 +132,7 @@
     <Compile Include="Jenkins\TestTasks\RunXtroTask.cs" />
     <Compile Include="Jenkins\TestTasks\TestTask.cs" />
     <Compile Include="Jenkins\TestVariationsFactory.cs" />
+    <Compile Include="Labels.cs" />
     <Compile Include="MacFlavorsExtensions.cs" />
     <Compile Include="MacTestProject.cs" />
     <Compile Include="MonoNativeInfo.cs" />
