@@ -65,6 +65,8 @@ jobs:
 
   steps:
   - template: ../common/configure.yml
+    parameters:
+      isPR: ${{ parameters.isPR }}
 
 - ${{ each pkg in parameters.packages }}:
   - job: ${{ pkg.job }}

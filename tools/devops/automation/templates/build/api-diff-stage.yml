@@ -37,6 +37,7 @@ jobs:
   steps:
   - template: ../common/configure.yml
     parameters: 
+      isPR: ${{ parameters.isPR }}
       uploadArtifacts: false
       enableDotnet: ${{ parameters.enableDotnet }}
 

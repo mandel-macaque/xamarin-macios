@@ -81,6 +81,8 @@ stages:
           vmImage: windows-latest
         steps:
         - template: governance-checks.yml
+          parameters:
+            isPR: ${{ parameters.isPR }}
 
       - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
         - job: translations
@@ -102,6 +104,8 @@ stages:
           vmImage: windows-latest
         steps:
           - template: ./common/clean.yml
+            parameters:
+              isPR: ${{ parameters.isPR }}
 
 
 - stage: build_packages
