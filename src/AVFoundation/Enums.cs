@@ -666,7 +666,9 @@ namespace AVFoundation {
 	[Native]
 	public enum AVSpeechSynthesisVoiceQuality : long {
 		Default = 1,
-		Enhanced
+		Enhanced,
+		[Watch (9,0), TV (16,0), Mac (13,0), iOS (16,0), MacCatalyst (16,0)]
+		Premium,
 	}
 
 	[iOS (9, 0)]
@@ -1614,6 +1616,87 @@ namespace AVFoundation {
 		VideoZoomChanged = 1uL << 0,
 		FocusModeChanged = 1uL << 1,
 		ExposureModeChanged = 1uL << 2,
+	}
+
+	[Watch (9,0), TV (16,0), Mac (13,0), iOS (16,0), MacCatalyst (16,0)]
+	[Native]
+	public enum AVSpeechSynthesisMarkerMark : long
+	{
+		Phoneme,
+		Word,
+		Sentence,
+		Paragraph,
+	}
+
+	[Watch (9,0), TV (16,0), Mac (13,0), iOS (16,0), MacCatalyst (16,0)]
+	[Native]
+	public enum AVMidiMetaEventType : long
+	{
+		SequenceNumber = 0,
+		Text = 1,
+		Copyright = 2,
+		TrackName = 3,
+		Instrument = 4,
+		Lyric = 5,
+		Marker = 6,
+		CuePoint = 7,
+		MidiChannel = 32,
+		MidiPort = 33,
+		EndOfTrack = 47,
+		Tempo = 81,
+		SmpteOffset = 84,
+		TimeSignature = 88,
+		KeySignature = 89,
+		ProprietaryEvent = 127,
+	}
+
+	[Watch (9,0), TV (16,0), Mac (13,0), iOS (16,0), MacCatalyst (16,0)]
+	[Native]
+	public enum AVMidiControlChangeMessageType : long
+	{
+		BankSelect = 0,
+		ModWheel = 1,
+		Breath = 2,
+		Foot = 4,
+		PortamentoTime = 5,
+		DataEntry = 6,
+		Volume = 7,
+		Balance = 8,
+		Pan = 10,
+		Expression = 11,
+		Sustain = 64,
+		Portamento = 65,
+		Sostenuto = 66,
+		Soft = 67,
+		LegatoPedal = 68,
+		Hold2Pedal = 69,
+		FilterResonance = 71,
+		ReleaseTime = 72,
+		AttackTime = 73,
+		Brightness = 74,
+		DecayTime = 75,
+		VibratoRate = 76,
+		VibratoDepth = 77,
+		VibratoDelay = 78,
+		ReverbLevel = 91,
+		ChorusLevel = 93,
+		RpnLsb = 100,
+		RpnMsb = 101,
+		AllSoundOff = 120,
+		ResetAllControllers = 121,
+		AllNotesOff = 123,
+		OmniModeOff = 124,
+		OmniModeOn = 125,
+		MonoModeOn = 126,
+		MonoModeOff = 127,
+	}
+
+	[Watch (9,0), TV (16,0), Mac (13,0), iOS (16,0), MacCatalyst (16,0)]
+	public enum AVAssetPlaybackConfigurationOption {
+		[Field ("AVAssetPlaybackConfigurationOptionStereoVideo")]
+		StereoVideo,
+		[Field ("AVAssetPlaybackConfigurationOptionStereoMultiviewVideo")]
+		StereoMultiviewVideo,
 	}
 
 }

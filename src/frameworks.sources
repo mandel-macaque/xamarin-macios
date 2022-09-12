@@ -288,6 +288,7 @@ AVFOUNDATION_SOURCES = \
 	AVFoundation/AVPlayerLayer.cs \
 	AVFoundation/AVPlayerViewController.cs \
 	AVFoundation/AVSampleBufferExtensions.cs \
+	AVFoundation/AVSpeechUtterance.cs \
 	AVFoundation/AVTextStyleRule.cs \
 	AVFoundation/Events.cs \
 	AVFoundation/AVPlayerLooper.cs \
