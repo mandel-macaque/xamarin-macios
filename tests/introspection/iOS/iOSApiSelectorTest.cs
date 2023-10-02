@@ -946,7 +946,7 @@ namespace Introspection {
 			case "affectsColorAppearance":
 				switch (declaredType.Name) {
 				case "UITraitTypesettingLanguage":
-						return true;
+					return true;
 				}
 				break;
 			}
